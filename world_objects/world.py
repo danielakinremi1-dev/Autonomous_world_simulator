@@ -1,14 +1,16 @@
 
-from terrain import Terrain
-from tile import Tile
-from constants import DEFAULT_MAP
+from world_objects.terrain import Terrain
+from world_objects.tile import Tile 
+from world_objects.npc import NPC
+from world_objects.configs import npc_configs
+import random
 
 class World():
-    def __init__(self, map_input):
+    def __init__(self, map_input: list[list[str, str]]):
         self.grid = []
-        self.map_input = map_input
         self.row_len = len(map_input[0])
         self.rows = len(map_input)
+        self.npcs = []
         for row in map_input:
             if len(row) != self.row_len:
                 raise ValueError("Misshapen map input")
@@ -20,8 +22,45 @@ class World():
                 new_row.append(Tile(Terrain(terrain_obj)))
             self.grid.append(new_row)
 
-    def __repr__(self):
+    def __str__(self):
         return f"A {self.row_len} by {self.rows} simulated world!"
+
+
+    def spawn_npc(self):
+
+        spawn_locations = []
+        
+        for y_idx, row in enumerate(self.grid):
+            for x_idx, tile in enumerate(row):
+                if tile.can_enter() and tile.terrain.type == "ground":
+                    spawn_locations.append((x_idx, y_idx))
+
+        for npc in npc_configs.keys():
+            if spawn_locations:
+                spawn_coord = random.choice(spawn_locations)
+                spawn_locations.remove(spawn_coord)
+                new_npc = NPC(spawn_coord[0], spawn_coord[1], npc, self)
+                self.grid[spawn_coord[1]][spawn_coord[0]].occupant = new_npc
+                self.npcs.append(new_npc)
+            else:
+                raise ValueError("Not enough spawn tiles for all NPCs")
+    
+
+
+
+
+    def move_npc(self, npc: NPC, direction: str):
+
+        if direction == "left"
+
+        return (new_tile)
+
+
+
+
+
+    
+
 
     def get_render_data(self):
         visual_grid = []
@@ -32,8 +71,4 @@ class World():
             visual_grid.append(new_visual_row)
         return visual_grid
 
-
-new_world = World(DEFAULT_MAP)
-print(new_world.grid)
-print(new_world)
-print(new_world.get_render_data())
+ 

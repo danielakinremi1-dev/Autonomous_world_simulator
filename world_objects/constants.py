@@ -1,3 +1,5 @@
+
+
 DEFAULT_MAP = [
     ["grass", "grass", "grass", "grass", "tree",  "tree",  "grass", "grass", "grass", "water", "water", "water", "grass", "grass", "tree",  "tree",  "grass", "grass", "grass", "grass"],
     ["grass", "grass", "grass", "grass", "tree",  "grass", "grass", "grass", "grass", "water", "water", "water", "grass", "grass", "grass", "tree",  "grass", "grass", "grass", "grass"],

@@ -1,7 +1,8 @@
-from terrain import Terrain
-from tile import Tile
+from world_objects.terrain import Terrain
+from world_objects.tile import Tile
+import pytest
 
-
-grassblock = Terrain("grass")
-tileblock = Tile(grassblock)
-print(tileblock.can_enter())
+def test_tiles():
+    grassblock = Terrain("grass")
+    tileblock = Tile(grassblock)
+    assert tileblock.can_enter() == True
