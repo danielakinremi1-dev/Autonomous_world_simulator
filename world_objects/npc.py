@@ -1,9 +1,12 @@
-from world_objects.configs import npc_configs
-from world_objects.world import World
-from world_objects.npc import NPC
+from world_objects.configs import npc_configs, direction_configs
+from typing import TYPE_CHECKING
+import random
+
+if TYPE_CHECKING:
+    from world_objects.world import World
 
 class NPC():
-    def __init__(self, x: int, y: int, npc: NPC, world: World):
+    def __init__(self, x: int, y: int, npc: str, world: "World") -> None:
         if npc not in npc_configs:
             raise ValueError("Invalid npc")
         self.x = x
@@ -11,17 +14,26 @@ class NPC():
         self.npc_type = npc
         self.world = world
         self.health = npc_configs[npc]["health"]
-        self.emoji = npc_configs[npc]["emoji"]
+        self.emoji = npc_configs[npc]["emoji"] 
 
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"A {self.npc_type}"
-    
+
 
     def get_visual(self) -> str:
          return self.emoji
 
-    def move(self, direction: str):
-        new_tile = self.world.move_npc(self, direction)
-        self.x = new_tile[1]
-        self.y = new_tile[0]
+
+    def wander(self) -> bool:
+        direction = random.choice(list(direction_configs))
+        return self.move(direction)
+
+
+    
+
+    def move(self, direction: str) -> bool:
+        if direction == "stay":
+            return True
+        return self.world.move_npc(self, direction)
+

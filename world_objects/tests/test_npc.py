@@ -1,8 +1,7 @@
 import pytest
+from world_objects.world import World
 from world_objects.npc import NPC
 from world_objects.configs import npc_configs
-from world_objects.world import World
-
 
 def test_npc_creation():
     TEST_MAP = [

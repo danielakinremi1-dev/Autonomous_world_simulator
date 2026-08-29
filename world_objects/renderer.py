@@ -1,10 +1,10 @@
 from world_objects.world import World 
 
 class Renderer():
-    def __init__(self, world_obj: World):
+    def __init__(self, world_obj: World) -> None:
         self.world_obj = world_obj
 
-    def render(self):
+    def render(self) -> None:
         render_data = self.world_obj.get_render_data()
         final_obj = ""
         for row in render_data:

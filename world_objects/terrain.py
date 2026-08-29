@@ -9,10 +9,10 @@ class Terrain():
         self.emoji = terrain_configs[type]["emoji"]
         self.traversable = terrain_configs[type]["traversable"]
 
-    def __str__(self):
+    def __str__(self) -> str:
             return f"{self.type} block"
 
-    def get_visual(self):
+    def get_visual(self) -> str:
          return self.emoji
 
 

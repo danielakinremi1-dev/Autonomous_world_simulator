@@ -2,11 +2,11 @@
 from world_objects.terrain import Terrain
 from world_objects.tile import Tile 
 from world_objects.npc import NPC
-from world_objects.configs import npc_configs
+from world_objects.configs import npc_configs, direction_configs
 import random
 
 class World():
-    def __init__(self, map_input: list[list[str, str]]):
+    def __init__(self, map_input: list[list[str]]):
         self.grid = []
         self.row_len = len(map_input[0])
         self.rows = len(map_input)
@@ -44,20 +44,36 @@ class World():
                 self.npcs.append(new_npc)
             else:
                 raise ValueError("Not enough spawn tiles for all NPCs")
-    
+            
 
+    def move_npc(self, npc: NPC, direction: str) -> bool:
+        if direction not in direction_configs:
+            raise ValueError("Invalid directional input") 
 
+        movement_coords = direction_configs[direction]
+        requested_coords = (
+            npc.x + movement_coords[0],
+            npc.y + movement_coords[1]
+        )
 
+        if (requested_coords[0] < 0 or requested_coords[1] < 0):
+            return False
+        if requested_coords[0] >= self.row_len or requested_coords[1] >= self.rows:
+            return False
+        
+        requested_tile = self.grid[requested_coords[1]][requested_coords[0]]
+        previous_tile = self.grid[npc.y][npc.x]
+        if requested_tile.can_enter():
+            requested_tile.occupant = npc
+            npc.x, npc.y = requested_coords[0], requested_coords[1]
+            previous_tile.occupant = None
+            return True
 
-    def move_npc(self, npc: NPC, direction: str):
+        return False
 
-        if direction == "left"
-
-        return (new_tile)
-
-
-
-
+    def advance_world(self) -> None:
+        for npc in self.npcs:
+            npc.wander()
 
     
 
@@ -70,5 +86,7 @@ class World():
                 new_visual_row.append(tile.get_visual())
             visual_grid.append(new_visual_row)
         return visual_grid
+
+
 
  
