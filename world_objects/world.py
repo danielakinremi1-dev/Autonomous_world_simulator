@@ -46,20 +46,15 @@ class World():
                 raise ValueError("Not enough spawn tiles for all NPCs")
             
 
-    def move_npc(self, npc: NPC, direction: str) -> bool:
-        if direction not in direction_configs:
-            raise ValueError("Invalid directional input") 
-
-        movement_coords = direction_configs[direction]
-        requested_coords = (
-            npc.x + movement_coords[0],
-            npc.y + movement_coords[1]
-        )
+    def move_npc(self, npc: NPC, requested_coords: tuple[int, int]) -> bool:
 
         if (requested_coords[0] < 0 or requested_coords[1] < 0):
             return False
         if requested_coords[0] >= self.row_len or requested_coords[1] >= self.rows:
             return False
+
+        if abs(requested_coords[0] - npc.x) + abs(requested_coords[1] - npc.y) != 1:
+            raise ValueError("Invalid directional movement requested")
         
         requested_tile = self.grid[requested_coords[1]][requested_coords[0]]
         previous_tile = self.grid[npc.y][npc.x]
@@ -68,15 +63,20 @@ class World():
             npc.x, npc.y = requested_coords[0], requested_coords[1]
             previous_tile.occupant = None
             return True
-
-        return False
+        else:
+            return False
 
     def advance_world(self) -> None:
+        #sorted(self.npcs, self.npcs.speed)
         for npc in self.npcs:
-            npc.wander()
+
+            npc.observe_and_act()
 
     
-
+    def find_nurse(self):
+        pass
+    def find_baker(self):
+        pass
 
     def get_render_data(self):
         visual_grid = []

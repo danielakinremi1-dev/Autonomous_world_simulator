@@ -6,16 +6,11 @@ terrain_configs = {"grass":{"traversable":True, "emoji":"🟩"},
            "ground":{"traversable":True, "emoji":"🟫"}}
 
 
-npc_configs = {"blacksmith":{"health":60, "emoji":"👲"}, 
-               "nurse":{"health":20, "emoji":"👩‍⚕️"}, 
-               "hunter":{"health":80, "emoji":"🥷"}, 
-               "baker":{"health":20, "emoji":"🧑‍🍳"},
-               "villager":{"health":20, "emoji":"👩‍🌾"}}
+npc_configs = {"blacksmith":{"health":600, "emoji":"👲", "speed" :80}, 
+               "nurse":{"health":200, "emoji":"👩‍⚕️","speed" :55}, 
+               "hunter":{"health":800, "emoji":"🥷","speed" :200}, 
+               "baker":{"health":200, "emoji":"🧑‍🍳","speed" :60},
+               "villager":{"health":200, "emoji":"👩‍🌾","speed" :50}}
 
-direction_configs = {
-    "up": (0, -1),
-    "down": (0, 1),
-    "left": (-1, 0),
-    "right": (1, 0),
-    "stay" : (0,0)
-}
+direction_configs = ((0, -1), (0, 1), (-1, 0), (1, 0), (0,0))
+
