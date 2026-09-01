@@ -69,15 +69,21 @@ class World():
     def advance_world(self) -> None:
         #sorted(self.npcs, self.npcs.speed)
         for npc in self.npcs:
-
             npc.observe_and_act()
 
     
     def find_nurse(self):
-        pass
+        for npc in self.npcs:
+            if npc.npc_type == "nurse":
+                return (npc.x, npc.y)
+        return None
+            
     def find_baker(self):
-        pass
-
+        for npc in self.npcs:
+            if npc.npc_type == "baker":
+                return (npc.x, npc.y)
+        return None
+            
     def get_render_data(self):
         visual_grid = []
         for row in self.grid:
