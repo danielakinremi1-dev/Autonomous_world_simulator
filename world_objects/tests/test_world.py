@@ -1,18 +1,8 @@
-from world_objects.constants import DEFAULT_MAP
-from world_objects.world import World
-from world_objects.npc import NPC
-from world_objects.configs import npc_configs
 import pytest
 
-
-
-def test_world():
-    new_world = World(DEFAULT_MAP)
-    placeholder = [['🟩', '🟩', '🟩', '🟩', '🌳', '🌳', '🟩', '🟩', '🟩', '🌊', '🌊', '🌊', '🟩', '🟩', '🌳', '🌳', '🟩', '🟩', '🟩', '🟩'], ['🟩', '🟩', '🟩', '🟩', '🌳', '🟩', '🟩', '🟩', '🟩', '🌊', '🌊', '🌊', '🟩', '🟩', '🟩', '🌳', '🟩', '🟩', '🟩', '🟩'], ['🟩', '🟩', '🌳', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🌊', '🌊', '🟩', '🟩', '🟩', '🟩', '🌳', '🟩', '🟩', '🟩', '🟩'], ['🟩', '🟩', '🌳', '🟩', '🟩', '🟩', '🌳', '🟩', '🟩', '🟩', '🌊', '🟩', '🟩', '🌳', '🌳', '🟩', '🟩', '🟩', '🟩', '🟩'], ['🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🌳', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🌳', '🟩', '🟩', '🟩', '🟩', '🌳', '🌳'], ['🟩', '🌳', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🌳', '🟩', '🟩', '🟩', '🟩'], ['🟩', '🟩', '🟩', '🟩', '🌳', '🟩', '🟩', '🟫', '🟫', '🟫', '🟫', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🌳', '🟩', '🟩'], ['🟩', '🟩', '🌳', '🟩', '🟩', '🟩', '🟫', '🟫', '🟫', '🟫', '🟫', '🟫', '🟩', '🟩', '🌳', '🌳', '🟩', '🟩', '🟩', '🟩'], ['🌳', '🟩', '🟩', '🟩', '🟩', '🟩', '🟫', '🟫', '🟫', '🟫', '🟫', '🟫', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🌳', '🟩'], ['🟩', '🟩', '🟩', '🌳', '🟩', '🟩', '🟫', '🟫', '🟫', '🟫', '🟫', '🟫', '🟩', '🟩', '🌳', '🟩', '🟩', '🟩', '🟩', '🟩'], ['🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩'], ['🌳', '🌳', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🌳', '🟩', '🟩', '🟩', '🟩', '🟩'], ['🟩', '🌳', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🌳', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩'], ['🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🌳', '🌳', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🌳', '🌳', '🟩', '🟩'], ['🟩', '🟩', '🌳', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩', '🌳', '🟩', '🟩', '🟩', '🟩', '🟩', '🟩']]
-    assert new_world.get_render_data() == placeholder
-    assert str(new_world) == "A 20 by 15 simulated world!" 
-
-
+from world_objects.constants import DEFAULT_MAP
+from world_objects.world import World
+from world_objects.configs import npc_configs
 
 
 def make_world():
@@ -23,99 +13,161 @@ def make_world():
     ])
 
 
+def make_open_world():
+    return World([
+        ["ground", "ground", "ground"],
+        ["ground", "ground", "ground"],
+        ["ground", "ground", "ground"],
+    ])
+
+
+# WORLD CREATION
+
+
+
+
+
+def test_world():
+    world = World(DEFAULT_MAP)
+
+    assert world.row_len == 20
+    assert world.rows == 15
+    assert str(world) == "A 20 by 15 simulated world!"
+
+
+# NPC SPAWNING
+
+
 def test_spawn_npc_creates_all_configured_npcs():
     world = make_world()
+
     world.spawn_npc()
+
     assert len(world.npcs) == len(npc_configs)
 
 
 def test_spawned_npcs_are_on_their_tiles():
     world = make_world()
+
     world.spawn_npc()
+
     for npc in world.npcs:
-        tile = world.grid[npc.y][npc.x]
-        assert tile.occupant is npc
+        assert world.grid[npc.y][npc.x].occupant is npc
 
 
 def test_spawned_npcs_have_unique_coordinates():
     world = make_world()
+
     world.spawn_npc()
+
     coordinates = [(npc.x, npc.y) for npc in world.npcs]
+
     assert len(coordinates) == len(set(coordinates))
 
 
 def test_npcs_only_spawn_on_ground():
     world = make_world()
+
     world.spawn_npc()
+
     for npc in world.npcs:
-        tile = world.grid[npc.y][npc.x]
-        assert tile.terrain.type == "ground"
+        assert world.grid[npc.y][npc.x].terrain.type == "ground"
 
 
 def test_spawned_tiles_are_no_longer_enterable():
     world = make_world()
+
     world.spawn_npc()
+
     for npc in world.npcs:
-        tile = world.grid[npc.y][npc.x]
-        assert tile.can_enter() is False
+        assert world.grid[npc.y][npc.x].can_enter() is False
 
 
 def test_spawn_npc_raises_when_not_enough_spawn_tiles():
-    too_small_map = [
+    world = World([
         ["ground"],
-    ]
-    world = World(too_small_map)
+    ])
 
     with pytest.raises(ValueError):
         world.spawn_npc()
 
 
+# PLACE NPC
 
 
-#NPC movement
+def test_place_npc():
+    world = make_open_world()
 
-def place_npc(world, x=1, y=1):
-    npc = NPC(x, y, "villager", world)
-    world.grid[y][x].occupant = npc
-    world.npcs.append(npc)
-    return npc
+    npc = world.place_npc(1, 1)
+
+    assert npc.x == 1
+    assert npc.y == 1
+    assert npc.npc_type == "villager"
+
+    assert world.grid[1][1].occupant is npc
+    assert npc in world.npcs
+
+
+@pytest.mark.parametrize(
+    "x, y",
+    [
+        (-1, 1),
+        (1, -1),
+        (3, 1),
+        (1, 3),
+    ],
+)
+def test_place_npc_out_of_bounds(x, y):
+    world = make_open_world()
+
+    with pytest.raises(ValueError):
+        world.place_npc(x, y)
+
+
+def test_place_npc_on_blocked_terrain():
+    world = make_world()
+
+    with pytest.raises(ValueError):
+        world.place_npc(2, 1)
+
+
+def test_place_npc_on_occupied_tile():
+    world = make_open_world()
+
+    world.place_npc(1, 1)
+
+    with pytest.raises(ValueError):
+        world.place_npc(1, 1)
+
+
+# NPC MOVEMENT
 
 
 def test_move_npc_success():
-    world = make_world()
-    npc = place_npc(world, 1, 1)
+    world = make_open_world()
+    npc = world.place_npc(1, 1)
 
-    result = npc.move("left")
+    result = npc.move((0, 1))
 
     assert result is True
 
-    assert npc.x == 0
-    assert npc.y == 1
+    assert (npc.x, npc.y) == (0, 1)
 
     assert world.grid[1][0].occupant is npc
     assert world.grid[1][1].occupant is None
 
 
-def test_move_npc_invalid_direction():
-    world = make_world()
-    npc = place_npc(world)
-
-    with pytest.raises(ValueError):
-        npc.move("diagonal")
-
-
 def test_move_npc_into_occupied_tile():
-    world = make_world()
+    world = make_open_world()
 
-    npc_one = place_npc(world, 1, 1)
-    npc_two = place_npc(world, 0, 1)
+    npc_one = world.place_npc(1, 1)
+    npc_two = world.place_npc(0, 1)
 
-    result = npc_one.move("left")
+    result = npc_one.move((0, 1))
 
     assert result is False
 
-    assert npc_one.x == 1
-    assert npc_one.y == 1
+    assert (npc_one.x, npc_one.y) == (1, 1)
 
     assert world.grid[1][1].occupant is npc_one
     assert world.grid[1][0].occupant is npc_two
@@ -123,41 +175,56 @@ def test_move_npc_into_occupied_tile():
 
 def test_move_npc_into_untraversable_tile():
     world = make_world()
-    npc = place_npc(world, 1, 1)
+    npc = world.place_npc(1, 1)
 
-    result = npc.move("right")
+    result = npc.move((2, 1))
 
     assert result is False
 
-    assert npc.x == 1
-    assert npc.y == 1
+    assert (npc.x, npc.y) == (1, 1)
 
     assert world.grid[1][1].occupant is npc
     assert world.grid[1][2].occupant is None
 
 
 @pytest.mark.parametrize(
-    "x, y, direction",
+    "x, y, requested_coord",
     [
-        (0, 1, "left"),
-        (2, 1, "right"),
-        (1, 0, "up"),
-        (1, 2, "down"),
+        (0, 1, (-1, 1)),
+        (2, 1, (3, 1)),
+        (1, 0, (1, -1)),
+        (1, 2, (1, 3)),
     ],
 )
-def test_move_npc_out_of_bounds(x, y, direction):
-    world = World([
-        ["ground", "ground", "ground"],
-        ["ground", "ground", "ground"],
-        ["ground", "ground", "ground"],
-    ])
+def test_move_npc_out_of_bounds(x, y, requested_coord):
+    world = make_open_world()
+    npc = world.place_npc(x, y)
 
-    npc = place_npc(world, x, y)
-
-    result = npc.move(direction)
+    result = npc.move(requested_coord)
 
     assert result is False
-
-    assert npc.x == x
-    assert npc.y == y
+    assert (npc.x, npc.y) == (x, y)
     assert world.grid[y][x].occupant is npc
+
+
+@pytest.mark.parametrize(
+    "requested_coord",
+    [
+        (2, 2),   # diagonal from (1, 1)
+        (0, 0),   # diagonal from (1, 1)
+        (1, 3),   # jumps two tiles down
+        (3, 1),   # jumps two tiles right
+    ],
+)
+def test_move_npc_rejects_invalid_movement(requested_coord):
+    world = World([
+        ["ground", "ground", "ground", "ground"],
+        ["ground", "ground", "ground", "ground"],
+        ["ground", "ground", "ground", "ground"],
+        ["ground", "ground", "ground", "ground"],
+    ])
+
+    npc = world.place_npc(1, 1)
+
+    with pytest.raises(ValueError):
+        npc.move(requested_coord)

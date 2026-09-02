@@ -1,7 +1,7 @@
 from world_objects.configs import npc_configs, direction_configs
 from typing import TYPE_CHECKING
 import random
-
+from collections import deque
 if TYPE_CHECKING:
     from world_objects.world import World
 
@@ -21,8 +21,7 @@ class NPC():
         self.destination = None
         self.pathing = None
         self.home = None 
-        self.goal = None
-        self.was_stopped = False
+        self.goal = None 
         self.sleep_ticks = 0
         self.sleep = False
         self.alive = True
@@ -48,23 +47,15 @@ class NPC():
                 return
 
         if self.health < ((npc_configs[self.npc_type]["health"]) * 0.7):
-            self.handle_health()
+            if self.goal != "Heal":
+                self.handle_health()
         elif self.hunger <= 100:
-            self.handle_hunger()
+            if self.goal != "Eat":
+                self.handle_hunger()
 
        
-        elif self.destination != None:
-            if self.pathing != None and len(self.pathing) > 0: 
-                can_move = self.move(self.pathing.pop(0))
-                if not can_move:
-                    self.pathing = None
-                return
-
-            can_find = self.pathfind()
-            if can_find:
-                can_move = self.move(self.pathing.pop(0))
-                if not can_move:
-                    self.pathing = None
+        elif self.destination != None and self.goal != None:
+            self.travel_to_destination() 
 
         elif self.health < ((npc_configs[self.npc_type]["health"]) * 0.9):
             self.handle_health()
@@ -75,22 +66,25 @@ class NPC():
             self.default_action()
 
     def pathfind(self)-> bool: 
+        if self.destination == None:
+            return False
         #could also update to only check static objects for blockage
         destination = self.destination
         start_coord = (self.x, self.y)
-        visited = [start_coord]
-        queue = [start_coord]
+        visited = {start_coord}
+        queue = deque([start_coord])
         path_history = {}
         tiles = self.world.grid
 
         path_history[start_coord] = None
+
         if destination == start_coord:
             self.arrived()
             return False
 
         
         while queue:
-            current_coord = queue.pop(0)
+            current_coord = queue.popleft()
             valid_directions = []
 
             if current_coord[1] != 0:
@@ -115,9 +109,9 @@ class NPC():
 
             for direction in valid_directions:
                 queue.append(direction)
-                visited.append(direction)
+                visited.add(direction)
                 path_history[direction] = current_coord
-                if direction == destination:
+                if self.is_at_destination(direction):
                     return self.traceback(direction, path_history)
         return False
     
@@ -138,43 +132,41 @@ class NPC():
         if self.inventory["bandages"] > 0:
             self.health = npc_configs[self.npc_type]["health"]
             self.inventory["bandages"] -= 1
-        else:
-            if self.destination != self.world.find_nurse() and self.destination != self.home:
-                self.destination = self.world.find_nurse()
-                if self.destination == None:
-                    if self.home != None:
-                        self.destination = self.home
-                    else:
-                        return
+            return
+        
+        if self.goal != "Heal":
+            self.goal = "Heal"
 
-                can_move = self.pathfind()
-                if can_move:
-                    self.move(self.pathing.pop(0))
+            if self.world.find_nurse() != None:
+                self.confirm_destination(self.world.find_nurse())
+            elif self.home != None:
+                self.confirm_destination(self.home)
+            else:
+                self.goal = None
+                return
+            
+        self.travel_to_destination() 
+
+
 
     def handle_hunger(self) -> None:
         if self.inventory["food"] > 0:
             self.hunger = 500
             self.inventory["food"] -= 1
             return
+        
+        if self.goal != "Eat":
+            self.goal = "Eat"
 
-        if self.world.find_baker() != None:
-            if self.destination != self.world.find_baker()
-                self.destination = self.world.find_baker()
-
-        elif self.home != None:
-            if self.destination != self.home:
-                self.destination = self.home
-        else:
-            return
-        if self.pathing == None or self.pathing == []:
-            can_find = self.pathfind()
-            if not can_find:
+            if self.world.find_baker() != None:
+                self.confirm_destination(self.world.find_baker())
+            elif self.home != None:
+                self.confirm_destination(self.home)
+            else:
+                self.goal = None
                 return
-
-        can_move = self.move(self.pathing.pop(0))
-        if not can_move:
-            self.pathing = None
-        #reset pathing in move when called
+            
+        self.travel_to_destination() 
 
 
     def default_action(self) -> None:
@@ -182,35 +174,70 @@ class NPC():
 
     def arrived(self):
         if self.destination == self.home:
-            self.health = (npc_configs[self.npc_type]["health"])
-            self.hunger = 500
-            self.sleep = True
-            self.sleep_ticks = 5
+            if self.goal == "Eat":
+                self.hunger = 500
+                self.sleep = True
+                self.sleep_ticks = 5
+            if self.goal == "Heal":
+                self.health = (npc_configs[self.npc_type]["health"])
+                self.sleep = True
+                self.sleep_ticks = 5
 
         if self.destination == self.world.find_baker():
-            self.hunger = 500
-            self.inventory["food"] = 4
+            if self.goal == "Eat":
+                self.hunger = 500
+                self.inventory["food"] = 4
 
-        if self.destination == self.world.find_nurse():
-            self.health = (npc_configs[self.npc_type]["health"])
-            self.inventory["bandages"] = 4
+        if self.destination == self.world.find_nurse(): 
+            if self.goal == "Heal":
+                self.health = (npc_configs[self.npc_type]["health"])
+                self.inventory["bandages"] = 4
 
         self.destination = None
         self.pathing = None
+        self.goal = None
 
     def wander(self) -> None:
-        direction = random.choice(list(direction_configs))
+        direction = random.choice(direction_configs)
         new_coord = (self.x + direction[0], self.y + direction[1])
         self.move(new_coord)
 
 
     def move(self, coord: tuple[int, int]) -> bool:
-        if coord == (self.x, self.y):
-            self.arrived()
-            return True
         move = self.world.move_npc(self, coord)
         if self.destination:
             if abs(self.destination[0] - self.x) <= 1 and  abs(self.destination[1] - self.y) <= 1:
                 self.arrived()
-
         return move
+
+    def travel_to_destination(self):
+        if self.is_at_destination():
+            self.arrived()
+            return
+
+        if self.pathing != None and len(self.pathing) > 0: 
+            can_move = self.move(self.pathing.pop(0))
+            if not can_move:
+                self.pathing = None
+            return
+
+        can_find = self.pathfind()
+        if can_find:
+            can_move = self.move(self.pathing.pop(0))
+            if not can_move:
+                self.pathing = None
+
+    def confirm_destination(self, new_dest: tuple[int, int]) -> None:
+        if self.destination != None:
+            if new_dest != self.destination:
+                self.destination = new_dest
+                self.pathing = None
+
+    def is_at_destination(self, checked_tile: tuple[int, int] | None = None) -> bool:
+        if checked_tile == None:
+            checked_tile = (self.x, self.y)
+
+        if self.destination != None:
+            if abs(self.destination[0] - checked_tile[0]) <= 1 and  abs(self.destination[1] - checked_tile[1]) <= 1:
+                return True
+        return False

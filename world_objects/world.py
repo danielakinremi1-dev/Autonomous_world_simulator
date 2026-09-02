@@ -44,8 +44,20 @@ class World():
                 self.npcs.append(new_npc)
             else:
                 raise ValueError("Not enough spawn tiles for all NPCs")
-            
 
+    def place_npc(self, x: int= 1, y:int = 1 , npc_type: str = "villager") -> NPC:
+    
+        if (x < 0 or y < 0) or (x >= self.row_len or y >= self.rows):
+            raise ValueError("Can't spawn off world map") 
+        if not self.grid[y][x].can_enter():
+            raise ValueError("Can't spawn on blocked tile")
+        
+        npc = NPC(x, y, npc_type, self)
+        self.grid[y][x].occupant = npc
+        self.npcs.append(npc)
+        return npc
+
+        
     def move_npc(self, npc: NPC, requested_coords: tuple[int, int]) -> bool:
 
         if (requested_coords[0] < 0 or requested_coords[1] < 0):
@@ -53,8 +65,12 @@ class World():
         if requested_coords[0] >= self.row_len or requested_coords[1] >= self.rows:
             return False
 
+        if requested_coords[0] == npc.x and requested_coords[1] == npc.y:
+            return True     
+        
         if abs(requested_coords[0] - npc.x) + abs(requested_coords[1] - npc.y) != 1:
             raise ValueError("Invalid directional movement requested")
+
         
         requested_tile = self.grid[requested_coords[1]][requested_coords[0]]
         previous_tile = self.grid[npc.y][npc.x]
