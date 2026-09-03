@@ -24,6 +24,19 @@ class World():
 
     def __str__(self):
         return f"A {self.row_len} by {self.rows} simulated world!"
+    
+    def get_render_data(self):
+        visual_grid = []
+        for row in self.grid:
+            new_visual_row = []
+            for tile in row:
+                new_visual_row.append(tile.get_visual())
+            visual_grid.append(new_visual_row)
+        return visual_grid
+
+    
+    
+    
 
 
     def spawn_npc(self):
@@ -44,6 +57,10 @@ class World():
                 self.npcs.append(new_npc)
             else:
                 raise ValueError("Not enough spawn tiles for all NPCs")
+
+        self.npcs.sort(key=lambda npc: npc.speed)
+
+
 
     def place_npc(self, x: int= 1, y:int = 1 , npc_type: str = "villager") -> NPC:
     
@@ -82,12 +99,15 @@ class World():
         else:
             return False
 
-    def advance_world(self) -> None:
-        #sorted(self.npcs, self.npcs.speed)
-        for npc in self.npcs:
-            npc.observe_and_act()
 
-    
+        
+
+    def advance_world(self) -> None: 
+        for npc in self.npcs:
+            view_distance = self.npc_worldview(npc)
+            npc.observe_and_act(view_distance)
+
+    #Known locations 
     def find_nurse(self):
         for npc in self.npcs:
             if npc.npc_type == "nurse":
@@ -99,15 +119,20 @@ class World():
             if npc.npc_type == "baker":
                 return (npc.x, npc.y)
         return None
-            
-    def get_render_data(self):
-        visual_grid = []
-        for row in self.grid:
-            new_visual_row = []
-            for tile in row:
-                new_visual_row.append(tile.get_visual())
-            visual_grid.append(new_visual_row)
-        return visual_grid
+
+    def npc_worldview(self, npc: NPC):
+        default_view = 6
+        if npc.type == "hunter":
+            default_view += 3
+        
+        map = self.grid
+        start_coord = (npc.x, npc.y)
+        current_tile = self.grid[npc.y][npc.x]
+
+        viewable_map = []
+
+
+        return viewable_map
 
 
 

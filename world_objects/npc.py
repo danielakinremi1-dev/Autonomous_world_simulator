@@ -46,12 +46,10 @@ class NPC():
                 self.sleep_ticks -= 1
                 return
 
-        if self.health < ((npc_configs[self.npc_type]["health"]) * 0.7):
-            if self.goal != "Heal":
-                self.handle_health()
+        if self.health < ((npc_configs[self.npc_type]["health"]) * 0.7): 
+            self.handle_health()
         elif self.hunger <= 100:
-            if self.goal != "Eat":
-                self.handle_hunger()
+            self.handle_hunger()
 
        
         elif self.destination != None and self.goal != None:
@@ -228,10 +226,9 @@ class NPC():
                 self.pathing = None
 
     def confirm_destination(self, new_dest: tuple[int, int]) -> None:
-        if self.destination != None:
-            if new_dest != self.destination:
-                self.destination = new_dest
-                self.pathing = None
+        if self.destination != new_dest:
+            self.destination = new_dest
+            self.pathing = None
 
     def is_at_destination(self, checked_tile: tuple[int, int] | None = None) -> bool:
         if checked_tile == None:

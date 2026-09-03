@@ -1,6 +1,5 @@
 import pytest
-
-from world_objects.constants import DEFAULT_MAP
+ 
 from world_objects.world import World
 from world_objects.configs import npc_configs
 
@@ -24,7 +23,23 @@ def make_open_world():
 # WORLD CREATION
 
 
-
+DEFAULT_MAP = [
+    ["grass", "grass", "grass", "grass", "tree",  "tree",  "grass", "grass", "grass", "water", "water", "water", "grass", "grass", "tree",  "tree",  "grass", "grass", "grass", "grass"],
+    ["grass", "grass", "grass", "grass", "tree",  "grass", "grass", "grass", "grass", "water", "water", "water", "grass", "grass", "grass", "tree",  "grass", "grass", "grass", "grass"],
+    ["grass", "grass", "tree",  "grass", "grass", "grass", "grass", "grass", "grass", "water", "water", "grass", "grass", "grass", "grass", "tree",  "grass", "grass", "grass", "grass"],
+    ["grass", "grass", "tree",  "grass", "grass", "grass", "tree",  "grass", "grass", "grass", "water", "grass", "grass", "tree",  "tree",  "grass", "grass", "grass", "grass", "grass"],
+    ["grass", "grass", "grass", "grass", "grass", "grass", "tree",  "grass", "grass", "grass", "grass", "grass", "grass", "tree",  "grass", "grass", "grass", "grass", "tree",  "tree"],
+    ["grass", "tree",  "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "tree",  "grass", "grass", "grass", "grass"],
+    ["grass", "grass", "grass", "grass", "tree",  "grass", "grass", "ground","ground","ground","ground","grass", "grass", "grass", "grass", "grass", "grass", "tree",  "grass", "grass"],
+    ["grass", "grass", "tree",  "grass", "grass", "grass", "ground","ground","ground","ground","ground","ground","grass", "grass", "tree",  "tree",  "grass", "grass", "grass", "grass"],
+    ["tree",  "grass", "grass", "grass", "grass", "grass", "ground","ground","ground","ground","ground","ground","grass", "grass", "grass", "grass", "grass", "grass", "tree",  "grass"],
+    ["grass", "grass", "grass", "tree",  "grass", "grass", "ground","ground","ground","ground","ground","ground","grass", "grass", "tree",  "grass", "grass", "grass", "grass", "grass"],
+    ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"],
+    ["tree",  "tree",  "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "tree",  "grass", "grass", "grass", "grass", "grass"],
+    ["grass", "tree",  "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "tree",  "grass", "grass", "grass", "grass", "grass", "grass"],
+    ["grass", "grass", "grass", "grass", "grass", "grass", "tree",  "tree",  "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "tree",  "tree",  "grass", "grass"],
+    ["grass", "grass", "tree",  "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "tree",  "grass", "grass", "grass", "grass", "grass", "grass"],
+]
 
 
 def test_world():
@@ -210,10 +225,10 @@ def test_move_npc_out_of_bounds(x, y, requested_coord):
 @pytest.mark.parametrize(
     "requested_coord",
     [
-        (2, 2),   # diagonal from (1, 1)
-        (0, 0),   # diagonal from (1, 1)
-        (1, 3),   # jumps two tiles down
-        (3, 1),   # jumps two tiles right
+        (2, 2),   
+        (0, 0), 
+        (1, 3), 
+        (3, 1),
     ],
 )
 def test_move_npc_rejects_invalid_movement(requested_coord):
