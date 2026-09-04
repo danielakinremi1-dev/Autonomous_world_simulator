@@ -16,10 +16,10 @@ class World():
                 raise ValueError("Misshapen map input")
 
 
-        for row in map_input:
+        for y_idx, row in enumerate(map_input):
             new_row = []
-            for terrain_obj in row:
-                new_row.append(Tile(Terrain(terrain_obj)))
+            for x_idx, terrain_obj in enumerate(row):
+                new_row.append(Tile(x_idx, y_idx, Terrain(terrain_obj)))
             self.grid.append(new_row)
 
     def __str__(self):
@@ -120,14 +120,39 @@ class World():
                 return (npc.x, npc.y)
         return None
 
-    def npc_worldview(self, npc: NPC):
-        default_view = 6
-        if npc.type == "hunter":
-            default_view += 3
+    def npc_worldview(self, npc: NPC) -> dict:
+        default_view = npc.view_radius
         
-        map = self.grid
-        start_coord = (npc.x, npc.y)
-        current_tile = self.grid[npc.y][npc.x]
+        world_map = self.grid
+        minimap = []
+
+        upper_left = (npc.x - default_view, npc.y - default_view) 
+        lower_right = (npc.x + default_view, npc.y + default_view)
+
+        if upper_left[0] < 0:
+            upper_left = (0, upper_left[1])
+
+        if upper_left[1] < 0:
+            upper_left = (upper_left[0], 0)
+
+        if lower_right[0] >= self.row_len:
+            lower_right = (self.row_len-1, lower_right[1])
+        if lower_right[1] >= self.rows:
+            lower_right = (lower_right[0], self.rows-1)
+
+        for row in range(upper_left[1], lower_right[1]+1):
+            section = world_map[row][upper_left[0]:lower_right[0]+1]
+            minimap.append(section)
+        return {"minimap": minimap, "upper_left": upper_left, "lower_tight" : lower_right}
+            
+
+
+        
+
+        #for tile in self.world from upper left to lower right:
+        #   if out of bounds leave, o append any tiles withing the mini grid and , maybe into a dict
+
+        
 
         viewable_map = []
 

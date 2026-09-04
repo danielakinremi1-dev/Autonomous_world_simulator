@@ -4,5 +4,5 @@ import pytest
 
 def test_tiles():
     grassblock = Terrain("grass")
-    tileblock = Tile(grassblock)
+    tileblock = Tile(1, 1, grassblock)
     assert tileblock.can_enter() == True

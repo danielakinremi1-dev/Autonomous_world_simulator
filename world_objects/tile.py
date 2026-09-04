@@ -1,9 +1,11 @@
 from world_objects.terrain import Terrain
 
 class Tile():
-    def __init__(self, terrain: Terrain) -> None:
+    def __init__(self, x: int, y: int, terrain: Terrain) -> None:
         self.terrain = terrain
         self.occupant = None
+        self.x = x
+        self.y = y
 
 
 

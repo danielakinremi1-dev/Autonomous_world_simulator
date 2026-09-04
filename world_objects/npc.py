@@ -15,7 +15,9 @@ class NPC():
         self.world = world
         self.speed = npc_configs[npc_type]["speed"]
         self.health = npc_configs[npc_type]["health"]
-        self.emoji = npc_configs[npc_type]["emoji"] 
+        self.emoji = npc_configs[npc_type]["emoji"]
+        self.job = npc_configs[npc_type]["job"]  
+        self.view_radius = npc_configs[npc_type]["view_radius"]  
         self.hunger = 500
         self.inventory = {"food": 2,"bandages": 2}
         self.destination = None
@@ -25,6 +27,7 @@ class NPC():
         self.sleep_ticks = 0
         self.sleep = False
         self.alive = True
+        
         #Spawn in homes with NPCs and provide visuals for goals later 
 
 
@@ -168,7 +171,27 @@ class NPC():
 
 
     def default_action(self) -> None:
-        self.wander()
+
+        if self.npc_type == "villager":
+            self.gather_resources()
+
+        if self.npc_type == "blacksmith":
+            self.smith_and_craft()
+
+        if self.npc_type == "nurse":
+            self.heal_and_bandage()
+
+        if self.npc_type == "baker":
+            self.cook_and_bake()
+
+        if self.npc_type == "hunter":
+            self.hunt_and_loot()
+
+        
+
+
+        else:
+            self.wander()
 
     def arrived(self):
         if self.destination == self.home:
@@ -238,3 +261,28 @@ class NPC():
             if abs(self.destination[0] - checked_tile[0]) <= 1 and  abs(self.destination[1] - checked_tile[1]) <= 1:
                 return True
         return False
+ 
+    def gather_resources(self):
+        pass
+        #water
+
+        #rock
+
+        #g 
+
+
+
+
+
+
+    def smith_and_craft(self):
+        pass
+
+    def heal_and_bandage(self):
+        pass
+
+    def cook_and_bake(self):
+        pass
+
+    def hunt_and_loot(self):
+        pass
