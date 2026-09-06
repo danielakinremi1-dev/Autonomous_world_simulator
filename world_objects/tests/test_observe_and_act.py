@@ -36,11 +36,11 @@ def test_pathfind_shortest_route_around_wall():
     result = npc.pathfind()
 
     assert result is True
-    assert npc.pathing is not None
+    assert npc.current_path is not None
 
     previous = (npc.x, npc.y)
 
-    for coord in npc.pathing:
+    for coord in npc.current_path:
         distance = (
             abs(coord[0] - previous[0])
             + abs(coord[1] - previous[1])
@@ -51,7 +51,7 @@ def test_pathfind_shortest_route_around_wall():
 
         previous = coord
 
-    assert npc.is_at_destination(npc.pathing[-1]) is True
+    assert npc.is_at_destination(npc.current_path[-1]) is True
 
 
 
@@ -70,7 +70,7 @@ def test_npc_arrives_at_destination():
 
     assert npc.destination is None
     assert npc.goal is None
-    assert npc.pathing is None
+    assert npc.current_path is None
 
 
 def test_npc_knows_when_destination_unreachable():
@@ -93,7 +93,7 @@ def test_npc_knows_when_destination_unreachable():
 
     assert result is False
     assert (npc.x, npc.y) == starting_position
-    assert npc.pathing is None
+    assert npc.current_path is None
 
 def test_auto_travel_fails_without_path():
     world = World([
@@ -136,7 +136,7 @@ def test_injured_npc_goes_to_nurse():
 
     assert villager.goal is None
     assert villager.destination is None
-    assert villager.pathing is None
+    assert villager.current_path is None
 
     assert abs(villager.x - nurse.x) <= 1
     assert abs(villager.y - nurse.y) <= 1
@@ -165,7 +165,7 @@ def test_hungry_npc_goes_to_baker():
 
     assert villager.goal is None
     assert villager.destination is None
-    assert villager.pathing is None
+    assert villager.current_path is None
 
     assert abs(villager.x - baker.x) <= 1
     assert abs(villager.y - baker.y) <= 1
@@ -233,13 +233,13 @@ def test_arrival_clears_pathfinding():
 
     villager.goal = "Eat"
     villager.destination = (baker.x, baker.y)
-    villager.pathing = [(1, 2), (2, 2)]
+    villager.current_path = [(1, 2), (2, 2)]
 
     villager.travel_to_destination()
 
     assert villager.goal is None
     assert villager.destination is None
-    assert villager.pathing is None
+    assert villager.current_path is None
 
 
 
@@ -278,11 +278,11 @@ def test_blocked_pathing_is_cleared():
 
     traveler.destination = (4, 2)
     traveler.goal = "Test"
-    traveler.pathing = [(1, 2), (2, 2), (3, 2)]
+    traveler.current_path = [(1, 2), (2, 2), (3, 2)]
 
     traveler.travel_to_destination()
 
     assert (traveler.x, traveler.y) == (0, 2)
-    assert traveler.pathing is None
+    assert traveler.current_path is None
 
     assert world.grid[2][1].occupant is blocker

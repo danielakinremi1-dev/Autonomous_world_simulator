@@ -7,10 +7,14 @@ import random
 
 class World():
     def __init__(self, map_input: list[list[str]]):
+        if len(map_input) <= 1:
+            raise ValueError("No proper map input")
+        
         self.grid = []
         self.row_len = len(map_input[0])
         self.rows = len(map_input)
         self.npcs = []
+
         for row in map_input:
             if len(row) != self.row_len:
                 raise ValueError("Misshapen map input")
@@ -21,6 +25,10 @@ class World():
             for x_idx, terrain_obj in enumerate(row):
                 new_row.append(Tile(x_idx, y_idx, Terrain(terrain_obj)))
             self.grid.append(new_row)
+
+
+
+
 
     def __str__(self):
         return f"A {self.row_len} by {self.rows} simulated world!"
@@ -58,7 +66,7 @@ class World():
             else:
                 raise ValueError("Not enough spawn tiles for all NPCs")
 
-        self.npcs.sort(key=lambda npc: npc.speed)
+        self.npcs.sort(key=lambda npc: npc.speed, reverse=True)
 
 
 
@@ -104,8 +112,7 @@ class World():
 
     def advance_world(self) -> None: 
         for npc in self.npcs:
-            view_distance = self.npc_worldview(npc)
-            npc.observe_and_act(view_distance)
+            npc.observe_and_act()
 
     #Known locations 
     def find_nurse(self):
@@ -143,21 +150,37 @@ class World():
         for row in range(upper_left[1], lower_right[1]+1):
             section = world_map[row][upper_left[0]:lower_right[0]+1]
             minimap.append(section)
-        return {"minimap": minimap, "upper_left": upper_left, "lower_tight" : lower_right}
-            
+        return {"minimap": minimap, "upper_left": upper_left, "lower_left": lower_right}
+ 
+    def get_resource(self, npc, tile_coord, target_resource):
+
+        tile = self.grid[tile_coord[1]][tile_coord[0]]
+        terrain = tile.terrain
+
+        if target_resource == "Gather wood" and terrain.type == "tree":
+            npc.inventory["wood"] += 1
+            tile.terrain.hp -= 1
+            if tile.terrain.hp < 1:
+                tile.terrain = Terrain("ground")
+
+        elif target_resource == "Gather stones" and terrain.type == "rock":
+            npc.inventory["stone"] += 1
+            tile.terrain.hp -= 1
+            if tile.terrain.hp < 1:
+                tile.terrain = Terrain("ground")
+
+        elif target_resource == "Gather herbs" and terrain.type == "plant":
+            npc.inventory["herbs"] += 1
+            tile.terrain.hp -= 1
+            if tile.terrain.hp < 1:
+                tile.terrain = Terrain("grass")
+
+        elif target_resource == "Gather water" and terrain.type == "water":
+            npc.inventory["water"] += 1  
 
 
-        
-
-        #for tile in self.world from upper left to lower right:
-        #   if out of bounds leave, o append any tiles withing the mini grid and , maybe into a dict
-
-        
-
-        viewable_map = []
-
-
-        return viewable_map
+    def spawn_world_objects(self):
+        pass
 
 
 

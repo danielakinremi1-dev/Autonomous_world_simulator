@@ -2,6 +2,7 @@ from world_objects.configs import npc_configs, direction_configs
 from typing import TYPE_CHECKING
 import random
 from collections import deque
+from items import Item
 if TYPE_CHECKING:
     from world_objects.world import World
 
@@ -16,17 +17,22 @@ class NPC():
         self.speed = npc_configs[npc_type]["speed"]
         self.health = npc_configs[npc_type]["health"]
         self.emoji = npc_configs[npc_type]["emoji"]
-        self.job = npc_configs[npc_type]["job"]  
+        self.job = npc_configs[npc_type]["job"] 
+        self.personality = "Cooperative"
         self.view_radius = npc_configs[npc_type]["view_radius"]  
         self.hunger = 500
-        self.inventory = {"food": 2,"bandages": 2}
+        self.inventory = npc_configs[npc_type]["inventory"]
         self.destination = None
-        self.pathing = None
+        self.current_path = None
         self.home = None 
         self.goal = None 
+        self.sub_goal = None
         self.sleep_ticks = 0
         self.sleep = False
+        self.busy_ticks = 0
+        self.busy = False
         self.alive = True
+        self.crafting_queue = None
         
         #Spawn in homes with NPCs and provide visuals for goals later 
 
@@ -40,31 +46,38 @@ class NPC():
 
 
     def observe_and_act(self) -> None: 
-        self.hunger -= 1
+        if self.alive:
+            self.hunger -= 1
 
-        if self.sleep == True:
-            if self.sleep_ticks == 0:
-                self.sleep = False
-            else:
-                self.sleep_ticks -= 1
+            if self.sleep == True:
+                if self.sleep_ticks == 0:
+                    self.sleep = False
+                else:
+                    self.sleep_ticks -= 1
+                    return
+
+            if self.busy == True:
+                self.busy_ticks -= 1
+                if self.busy_ticks < 1:
+                    self.crafting(status = "Done")
                 return
 
-        if self.health < ((npc_configs[self.npc_type]["health"]) * 0.7): 
-            self.handle_health()
-        elif self.hunger <= 100:
-            self.handle_hunger()
+            if self.health < ((npc_configs[self.npc_type]["health"]) * 0.7): 
+                self.handle_health()
+            elif self.hunger <= 100:
+                self.handle_hunger()
 
-       
-        elif self.destination != None and self.goal != None:
-            self.travel_to_destination() 
+        
+            elif self.destination != None and self.goal != None:
+                self.travel_to_destination() 
 
-        elif self.health < ((npc_configs[self.npc_type]["health"]) * 0.9):
-            self.handle_health()
-        elif self.hunger <= 250:
-            self.handle_hunger()
+            elif self.health < ((npc_configs[self.npc_type]["health"]) * 0.9):
+                self.handle_health()
+            elif self.hunger <= 250:
+                self.handle_hunger()
 
-        else:
-            self.default_action()
+            else:
+                self.default_action()
 
     def pathfind(self)-> bool: 
         if self.destination == None:
@@ -123,7 +136,7 @@ class NPC():
         while pathing[current_coord] != None:
             path.append(current_coord)
             current_coord = pathing[current_coord]
-        self.pathing = path[::-1]
+        self.current_path = path[::-1]
         return True
         
  
@@ -140,8 +153,10 @@ class NPC():
 
             if self.world.find_nurse() != None:
                 self.confirm_destination(self.world.find_nurse())
+                self.sub_goal = "Find nurse"
             elif self.home != None:
                 self.confirm_destination(self.home)
+                self.sub_goal = "Get home"
             else:
                 self.goal = None
                 return
@@ -161,8 +176,10 @@ class NPC():
 
             if self.world.find_baker() != None:
                 self.confirm_destination(self.world.find_baker())
+                self.sub_goal = "Find baker"
             elif self.home != None:
                 self.confirm_destination(self.home)
+                self.sub_goal = "Get home"
             else:
                 self.goal = None
                 return
@@ -173,28 +190,194 @@ class NPC():
     def default_action(self) -> None:
 
         if self.npc_type == "villager":
+            self.goal = "Gather resources"
             self.gather_resources()
 
-        if self.npc_type == "blacksmith":
+        elif self.npc_type == "blacksmith":
+            self.goal = "Craft items"
             self.smith_and_craft()
 
-        if self.npc_type == "nurse":
+        elif self.npc_type == "nurse":
+            self.goal = "Manage infirmary"
             self.heal_and_bandage()
 
-        if self.npc_type == "baker":
+        elif self.npc_type == "baker":
+            self.goal = "Make food"
             self.cook_and_bake()
 
-        if self.npc_type == "hunter":
+        elif self.npc_type == "hunter":
+            self.goal = "Hunt"
             self.hunt_and_loot()
-
-        
-
 
         else:
             self.wander()
 
+
+
+
+
+
+
+
+
+
+    
+ 
+    def gather_resources(self):
+        self.hunger -= 1
+        visible_tiles = self.world.npc_worldview(self)
+        target_terrain = None
+        
+        target_tiles = []
+        routes = []
+        final_route = None
+
+        #Can check if resource low first with helper method, otherwise skip
+        if self.inventory["wood"]< 3: 
+            target_terrain = "tree"
+            self.sub_goal = "Gather wood"
+        elif self.inventory["herbs"] < 3: 
+            target_terrain = "plant"
+            self.sub_goal = "Gather herbs"
+        elif self.inventory["water"] < 3: 
+            target_terrain = "water"
+            self.sub_goal = "Gather water"
+        elif self.inventory["stone"] < 3: 
+            target_terrain = "rock"
+            self.sub_goal = "Gather stones"
+        else:
+            self.trade_and_sell()
+            return
+        
+
+        for row in visible_tiles:
+            for tile in row:
+                if tile.terrain.type == target_terrain:
+                    target_tiles.append(tile)
+
+
+        for tile in target_tiles:
+            self.confirm_destination((tile.x, tile.y))
+            if self.pathfind():
+                routes.append(self.current_path)
+
+        if routes:
+            final_route = routes[0]
+            for route in routes:
+                if len(route) < len(final_route):
+                    final_route = route
+
+        if final_route == None:
+            self.wander()
+        else:
+            self.current_path = final_route
+            self.destination = final_route[-1]
+            self.move(self.current_path.pop(0))
+
+
+
+ #Ensure homes spawn in and blacksmith has default start mats
+    def smith_and_craft(self, request = None):
+        self.hunger -= 1
+        self.goal = "Craft"
+        self.confirm_destination(self.home)
+        if not self.is_at_destination():
+            self.travel_to_destination()
+            return
+
+        if self.inventory["stone"] <= 7 or self.inventory["wood"] <= 7 or self.inventory["water"] <= 4:
+            return
+        if self.inventory["smithing hammer"] < 1:
+            self.crafting("smithing hammer")
+        if request:
+            self.crafting(request)
+
+
+
+        if self.inventory["pickaxe"] < 2:
+            self.crafting("pickaxe")
+
+
+        if self.inventory["axe"] < 2:
+            self.crafting("axe")
+
+
+        
+        if self.inventory["medical equipment"] < 1:
+            pself.crafting("medical equipment")
+            
+        if self.inventory["cooking equipment"] < 1:
+            self.crafting("cooking equipment")
+
+        
+        if self.inventory["bow"] < 2:
+            self.crafting("bow")
+
+        if self.inventory["sword"] < 2:
+            self.crafting("sword")
+
+        if self.inventory["armor"] < 2:
+            self.crafting("armor")
+
+
+
+
+    def crafting(self, item_name = None, status = "Start"):
+        if status == "Start" and item_name: 
+            self.subgoal = f"Crafting {item_name}"
+            self.crafting_queue = Item(item_name)
+            self.busy = True
+            self.busy_ticks = self.crafting_queue.craft_time
+
+            materials_used = self.crafting_queue.craft_materials
+            for key, value in materials_used.items():
+                self.inventory[key] -= value
+
+        elif status == "Done":
+            self.inventory["equipment"].append(self.crafting_queue)
+
+        else:
+            raise ValueError("Invalid crafting input")
+
+    def heal_and_bandage(self):
+        self.hunger -= 1
+        pass
+
+    def cook_and_bake(self):
+        self.hunger -= 1
+        pass
+
+    def hunt_and_loot(self):
+        self.hunger -= 1
+        pass
+
+    def trade_and_sell(self):
+        self.hunger -= 1
+        pass
+        
+    #maybe a lesser hunt for villagers, wander and hunt use similar logic for edges
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def arrived(self):
         if self.destination == self.home:
+            #could add helper methods for eat and heal with optional arguments of sleep and inventory
             if self.goal == "Eat":
                 self.hunger = 500
                 self.sleep = True
@@ -203,31 +386,62 @@ class NPC():
                 self.health = (npc_configs[self.npc_type]["health"])
                 self.sleep = True
                 self.sleep_ticks = 5
+            if self.goal == "Craft":
+                self.smith_and_craft()
 
         if self.destination == self.world.find_baker():
             if self.goal == "Eat":
                 self.hunger = 500
                 self.inventory["food"] = 4
+            if self.goal == "Sell items":
+                pass
 
         if self.destination == self.world.find_nurse(): 
-            if self.goal == "Heal":
+            if self.goal == "Heal" :
                 self.health = (npc_configs[self.npc_type]["health"])
                 self.inventory["bandages"] = 4
+            if self.goal == "Sell items":
+                pass
 
+        if self.goal == "Gather resources":
+            self.world.get_resource(self, self.destination, self.sub_goal)
+ 
         self.destination = None
-        self.pathing = None
+        self.current_path = None
         self.goal = None
+        self.sub_goal = None
 
     def wander(self) -> None:
-        direction = random.choice(direction_configs)
-        new_coord = (self.x + direction[0], self.y + direction[1])
-        self.move(new_coord)
+        minimap_data = self.world.npc_worldview(self)
+        minimap = minimap_data["minimap"]
+        upper_left = minimap_data["upper_left"]
+        lower_right = minimap_data["lower_right"]
+        outer_tiles_coord = []
+        wandering_paths = []
+        
+        for row in minimap:
+            for tile in row:
+                if ((tile.x == (upper_left[0]) or tile.x == lower_right[0] 
+                or tile.y == (upper_left[1]) or tile.y == lower_right[1]) 
+                and (tile.can_enter())):
+                    outer_tiles_coord.append((tile.x, tile.y))
+
+        for outer_tile in outer_tiles_coord:
+            self.confirm_destination(outer_tile)
+            if self.pathfind():
+                wandering_paths.append(self.current_path)
+
+        if wandering_paths:
+            final_route = random.choice(wandering_paths)
+            self.destination = final_route[-1]
+            self.current_path = final_route
+            self.move(self.current_path.pop(0))
 
 
     def move(self, coord: tuple[int, int]) -> bool:
         move = self.world.move_npc(self, coord)
         if self.destination:
-            if abs(self.destination[0] - self.x) <= 1 and  abs(self.destination[1] - self.y) <= 1:
+            if self.is_at_destination():
                 self.arrived()
         return move
 
@@ -236,22 +450,22 @@ class NPC():
             self.arrived()
             return
 
-        if self.pathing != None and len(self.pathing) > 0: 
-            can_move = self.move(self.pathing.pop(0))
+        if self.current_path != None and len(self.current_path) > 0: 
+            can_move = self.move(self.current_path.pop(0))
             if not can_move:
-                self.pathing = None
+                self.current_path = None
             return
 
         can_find = self.pathfind()
         if can_find:
-            can_move = self.move(self.pathing.pop(0))
+            can_move = self.move(self.current_path.pop(0))
             if not can_move:
-                self.pathing = None
+                self.current_path = None
 
     def confirm_destination(self, new_dest: tuple[int, int]) -> None:
         if self.destination != new_dest:
             self.destination = new_dest
-            self.pathing = None
+            self.current_path = None
 
     def is_at_destination(self, checked_tile: tuple[int, int] | None = None) -> bool:
         if checked_tile == None:
@@ -261,28 +475,15 @@ class NPC():
             if abs(self.destination[0] - checked_tile[0]) <= 1 and  abs(self.destination[1] - checked_tile[1]) <= 1:
                 return True
         return False
- 
-    def gather_resources(self):
-        pass
-        #water
-
-        #rock
-
-        #g 
 
 
 
 
 
 
-    def smith_and_craft(self):
-        pass
-
-    def heal_and_bandage(self):
-        pass
-
-    def cook_and_bake(self):
-        pass
-
-    def hunt_and_loot(self):
-        pass
+    def get_hit(self, damage):
+        self.health -= damage
+        if self.health <= 0:
+            self.alive = False
+            self.emoji = "❌"
+        

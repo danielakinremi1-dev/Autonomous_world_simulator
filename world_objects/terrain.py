@@ -8,6 +8,7 @@ class Terrain():
         self.type = type
         self.emoji = terrain_configs[type]["emoji"]
         self.traversable = terrain_configs[type]["traversable"]
+        self.hp = terrain_configs[type]["hp"]
 
     def __str__(self) -> str:
             return f"{self.type} block"
