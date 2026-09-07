@@ -119,7 +119,7 @@ def test_injured_npc_goes_to_nurse():
     villager = world.place_npc(0, 2, "villager")
     nurse = world.place_npc(4, 2, "nurse")
 
-    villager.health = npc_configs["villager"]["health"] * 0.5
+    villager.max_health = npc_configs["villager"]["health"] * 0.5
     villager.inventory["bandages"] = 0
 
     for _ in range(20):
@@ -131,7 +131,7 @@ def test_injured_npc_goes_to_nurse():
         ):
             break
 
-    assert villager.health == npc_configs["villager"]["health"]
+    assert villager.max_health == npc_configs["villager"]["health"]
     assert villager.inventory["bandages"] == 4
 
     assert villager.goal is None
@@ -194,12 +194,12 @@ def test_npcs_use_bandages_before_seeking_nurse():
     villager = world.place_npc(0, 2, "villager")
     world.place_npc(4, 2, "nurse")
 
-    villager.health = npc_configs["villager"]["health"] * 0.5
+    villager.max_health = npc_configs["villager"]["health"] * 0.5
     villager.inventory["bandages"] = 2
 
     villager.observe_and_act()
 
-    assert villager.health == npc_configs["villager"]["health"]
+    assert villager.max_health == npc_configs["villager"]["health"]
     assert villager.inventory["bandages"] == 1
 
     assert villager.goal is None
@@ -213,7 +213,7 @@ def test_npcs_prioritize_critical_health_over_critical_hunger():
     nurse = world.place_npc(4, 2, "nurse")
     world.place_npc(4, 4, "baker")
 
-    villager.health = npc_configs["villager"]["health"] * 0.5
+    villager.max_health = npc_configs["villager"]["health"] * 0.5
     villager.hunger = 50
 
     villager.inventory["bandages"] = 0

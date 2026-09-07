@@ -1,5 +1,7 @@
-from world_objects.configs import item_configs
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from world_objects.configs import item_configs
 
 class Item():
 
@@ -10,15 +12,11 @@ class Item():
         self.craft_materials = item_configs[item_name]["craft materials"]
         self.recycle_materials = item_configs[item_name]["recycle materials"]
         self.damage = item_configs[item_name]["damage"]
+        self.healing = item_configs[item_name]["healing"]
+        self.satiation = item_configs[item_name]["healing"]
+        self.armor = item_configs[item_name]["armor"]
         self.sell_price = item_configs[item_name]["price"]
-        self.recycle_price = self.sell_price // 3      
-        self.broken = False
+        self.recycle_price = self.sell_price // 3 
+        self.can_use = False
+        
 
-    def use(self):
-        if self.durability == 0 or self.broken:
-            return False
-
-        self.durability -= 1
-        if self.durability == 0:
-            self.broken = True
-        return True

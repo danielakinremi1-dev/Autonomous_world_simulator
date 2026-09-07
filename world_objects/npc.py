@@ -44,7 +44,7 @@ class NPC():
          return self.emoji
 
 
-
+#Refactor order by importance, handle broken items
     def observe_and_act(self) -> None: 
         if self.alive:
             self.hunger -= 1
@@ -57,15 +57,20 @@ class NPC():
                     return
 
             if self.busy == True:
-                self.busy_ticks -= 1
-                if self.busy_ticks < 1:
-                    self.crafting(status = "Done")
-                return
+                if self.busy_ticks == 0:
+                    self.can_craft(status = "Done")
+                    self.busy = False
+                else:
+                    self.busy_ticks -= 1
+                    self.hunger -= 2
+                    return 
 
             if self.health < ((npc_configs[self.npc_type]["health"]) * 0.7): 
                 self.handle_health()
             elif self.hunger <= 100:
                 self.handle_hunger()
+
+            
 
         
             elif self.destination != None and self.goal != None:
@@ -276,89 +281,154 @@ class NPC():
 
 
 
- #Ensure homes spawn in and blacksmith has default start mats
+ #Ensure homes spawn in and blacksmith has default start mats, 
     def smith_and_craft(self, request = None):
-        self.hunger -= 1
         self.goal = "Craft"
         self.confirm_destination(self.home)
         if not self.is_at_destination():
             self.travel_to_destination()
             return
 
-        if self.inventory["stone"] <= 7 or self.inventory["wood"] <= 7 or self.inventory["water"] <= 4:
-            return
-        if self.inventory["smithing hammer"] < 1:
-            self.crafting("smithing hammer")
-        if request:
-            self.crafting(request)
+        elif not self.inventory["equipment"]["smithing hammer"].can_use:
+            self.can_craft("smithing hammer")
+        elif request:
+            self.can_craft(request)
 
-
-
-        if self.inventory["pickaxe"] < 2:
-            self.crafting("pickaxe")
-
-
-        if self.inventory["axe"] < 2:
-            self.crafting("axe")
-
+        elif self.inventory["pickaxe"] < 2:
+            self.can_craft("pickaxe")
+        elif self.inventory["axe"] < 2:
+            self.can_craft("axe")
+        
+        elif self.inventory["medical equipment"] < 1:
+            if not self.can_craft("medical equipment")
+        elif self.inventory["cooking equipment"] < 1:
+            self.can_craft("cooking equipment")
 
         
-        if self.inventory["medical equipment"] < 1:
-            pself.crafting("medical equipment")
-            
-        if self.inventory["cooking equipment"] < 1:
-            self.crafting("cooking equipment")
-
-        
-        if self.inventory["bow"] < 2:
-            self.crafting("bow")
-
-        if self.inventory["sword"] < 2:
-            self.crafting("sword")
-
-        if self.inventory["armor"] < 2:
-            self.crafting("armor")
+        elif self.inventory["bow"] < 2:
+            self.can_craft("bow")
+        elif self.inventory["sword"] < 2:
+            self.can_craft("sword")
+        elif self.inventory["armor"] < 2:
+            self.can_craft("armor")
 
 
 
 
-    def crafting(self, item_name = None, status = "Start"):
-        if status == "Start" and item_name: 
-            self.subgoal = f"Crafting {item_name}"
-            self.crafting_queue = Item(item_name)
-            self.busy = True
-            self.busy_ticks = self.crafting_queue.craft_time
 
-            materials_used = self.crafting_queue.craft_materials
-            for key, value in materials_used.items():
-                self.inventory[key] -= value
 
-        elif status == "Done":
-            self.inventory["equipment"].append(self.crafting_queue)
 
         else:
             raise ValueError("Invalid crafting input")
+        
 
     def heal_and_bandage(self):
-        self.hunger -= 1
-        pass
+        self.goal = "Heal"
+        self.confirm_destination(self.home)
+        if not self.is_at_destination():
+            self.travel_to_destination()
+            return
+
+        elif not self.inventory["equipment"]["medical equipment"].can_use:
+            self.find_blacksmith() 
+
+        elif self.inventory["equipment"]["bandages"] < 2:
+            self.can_craft("bandages") 
+         
 
     def cook_and_bake(self):
-        self.hunger -= 1
-        pass
+        self.goal = "Cook"
+        self.confirm_destination(self.home)
+        if not self.is_at_destination():
+            self.travel_to_destination()
+            return
+
+        elif not self.inventory["equipment"]["cooking utensils"].can_use:
+            self.find_blacksmith() 
+
+        elif self.inventory["equipment"]["food"] < 2:
+            self.can_craft("food") 
 
     def hunt_and_loot(self):
         self.hunger -= 1
         pass
 
-    def trade_and_sell(self):
-        self.hunger -= 1
+    def buy_and_sell(self, buyer, seller):
+       
         pass
+ 
+
+
+    def recycle(self):
+        pass
+
+
+
+
+
+    def can_craft(self, item_name = None, status = "Start"):
+        if status == "Start" and item_name: 
+
+            self.crafting_queue = Item(item_name)
+
+            materials_used = self.crafting_queue.craft_materials
+            for key, value in materials_used.items():
+                material_cost = value
+                current_amount = self.inventory[key]
+                if current_amount - material_cost < 0:
+                    self.crafting_queue = None
+                    return False
+                self.inventory[key] -= material_cost
+
+            self.sub_goal = f"Crafting {item_name}"
+            self.busy = True
+            self.busy_ticks = self.crafting_queue.craft_time
+
+            if self.type == "blacksmith":
+                self.inventory["equipment"]["smithing hammer"].use()
+
+            if self.type == "baker":
+                self.inventory["equipment"]["cooking utensils"].use()
+
+            if self.type == "nurse":
+                self.inventory["equipment"]["medical equipment"].use()
+
+            return True
+
+        elif status == "Done":
+            self.inventory["equipment"].append(self.crafting_queue)
+
+    def wait_for_resources(self):
+        pass
+
         
     #maybe a lesser hunt for villagers, wander and hunt use similar logic for edges
 
 
 
+
+
+
+
+
+    def use(self, item):
+        if item.durability == 0 or item.broken:
+            return False
+
+        item.durability -= 1
+        if item.durability == 0:
+            item.can_use = True
+
+        if item.damage:
+            pass
+
+        if item.healing:
+            pass
+
+        if item.satiation:
+            pass
+
+        return True
 
 
 
@@ -439,6 +509,7 @@ class NPC():
 
 
     def move(self, coord: tuple[int, int]) -> bool:
+        self.hunger -= 2
         move = self.world.move_npc(self, coord)
         if self.destination:
             if self.is_at_destination():

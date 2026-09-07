@@ -127,6 +127,12 @@ class World():
                 return (npc.x, npc.y)
         return None
 
+    def find_nurse(self):
+        for npc in self.npcs:
+            if npc.npc_type == "blacksmith":
+                return (npc.x, npc.y)
+        return None
+
     def npc_worldview(self, npc: NPC) -> dict:
         default_view = npc.view_radius
         
