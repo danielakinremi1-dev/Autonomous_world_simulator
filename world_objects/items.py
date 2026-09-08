@@ -11,12 +11,26 @@ class Item():
         self.craft_time = item_configs[item_name]["craft time"]
         self.craft_materials = item_configs[item_name]["craft materials"]
         self.recycle_materials = item_configs[item_name]["recycle materials"]
-        self.damage = item_configs[item_name]["damage"]
-        self.healing = item_configs[item_name]["healing"]
-        self.satiation = item_configs[item_name]["healing"]
-        self.armor = item_configs[item_name]["armor"]
+        self.item_type = item_configs[item_name]["item_type"]
+        self.stat_bonus = item_configs[item_name]["stat bonus"]
+        self.quantity = item_configs[item_name]["quantity"]
+        self.consumable = item_configs[item_name]["stat bonus"]
         self.sell_price = item_configs[item_name]["price"]
         self.recycle_price = self.sell_price // 3 
-        self.can_use = False
+        self.usable = True
+        self.broken = 0
+
+        
+
+    def use(self, item):
+        if item.durability <= 0:
+            self.broken += 1
+            self.quantity -= 1
+            if self.quantity >= 1:
+                self.durability = item_configs[self.item_name]["durability"] - 1
+                return self.stat_bonus
+            else:
+                self.usable = False
+                return 0
         
 

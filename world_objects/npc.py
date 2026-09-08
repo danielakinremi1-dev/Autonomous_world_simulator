@@ -44,7 +44,7 @@ class NPC():
          return self.emoji
 
 
-#Refactor order by importance, handle broken items
+#Refactor order by importance, handle broken and unusable items and consumbles
     def observe_and_act(self) -> None: 
         if self.alive:
             self.hunger -= 1
@@ -199,7 +199,7 @@ class NPC():
             self.gather_resources()
 
         elif self.npc_type == "blacksmith":
-            self.goal = "Craft items"
+            self.goal = "Manage smithing station"
             self.smith_and_craft()
 
         elif self.npc_type == "nurse":
@@ -207,11 +207,11 @@ class NPC():
             self.heal_and_bandage()
 
         elif self.npc_type == "baker":
-            self.goal = "Make food"
+            self.goal = "Manage bakery"
             self.cook_and_bake()
 
         elif self.npc_type == "hunter":
-            self.goal = "Hunt"
+            self.goal = "Hunt and gather"
             self.hunt_and_loot()
 
         else:
@@ -283,13 +283,12 @@ class NPC():
 
  #Ensure homes spawn in and blacksmith has default start mats, 
     def smith_and_craft(self, request = None):
-        self.goal = "Craft"
         self.confirm_destination(self.home)
         if not self.is_at_destination():
             self.travel_to_destination()
             return
 
-        elif not self.inventory["equipment"]["smithing hammer"].can_use:
+        if not self.inventory["equipment"]["smithing hammer"]:
             self.can_craft("smithing hammer")
         elif request:
             self.can_craft(request)
@@ -323,31 +322,39 @@ class NPC():
         
 
     def heal_and_bandage(self):
-        self.goal = "Heal"
+
+        if not self.inventory["equipment"]["medical equipment"].usable:
+            self.goal = "Repair items at blacksmith"
+            self.sub_goal = "Replace broken medical equipment"
+            self.confirm_destination(self.find_blacksmith())
+            if not self.is_at_destination():
+                self.travel_to_destination()
+        
         self.confirm_destination(self.home)
         if not self.is_at_destination():
             self.travel_to_destination()
             return
-
-        elif not self.inventory["equipment"]["medical equipment"].can_use:
-            self.find_blacksmith() 
-
-        elif self.inventory["equipment"]["bandages"] < 2:
+        
+        elif self.inventory["equipment"]["bandages"].quantity < 2:
             self.can_craft("bandages") 
          
 
     def cook_and_bake(self):
-        self.goal = "Cook"
+        if not self.inventory["equipment"]["cooking utensils"].usable:
+            self.goal = "Repair items at blacksmith"
+            self.sub_goal = "Replace broken cooking utensils"
+            self.confirm_destination(self.find_blacksmith())
+            if not self.is_at_destination():
+                self.travel_to_destination()
+                return
+        
         self.confirm_destination(self.home)
         if not self.is_at_destination():
             self.travel_to_destination()
             return
-
-        elif not self.inventory["equipment"]["cooking utensils"].can_use:
-            self.find_blacksmith() 
-
-        elif self.inventory["equipment"]["food"] < 2:
-            self.can_craft("food") 
+        
+        if self.inventory["equipment"]["bandages"].quantity < 2:
+            self.can_craft("bandages") 
 
     def hunt_and_loot(self):
         self.hunger -= 1
@@ -385,21 +392,28 @@ class NPC():
             self.busy_ticks = self.crafting_queue.craft_time
 
             if self.type == "blacksmith":
-                self.inventory["equipment"]["smithing hammer"].use()
+                self.inventory["smithing hammer"].use()
 
             if self.type == "baker":
-                self.inventory["equipment"]["cooking utensils"].use()
+                self.inventory["cooking utensils"].use()
 
             if self.type == "nurse":
-                self.inventory["equipment"]["medical equipment"].use()
+                self.inventory["medical equipment"].use()
 
             return True
 
         elif status == "Done":
-            self.inventory["equipment"].append(self.crafting_queue)
+            self.add_to_inventory(self, self.crafting_queue)
+
 
     def wait_for_resources(self):
         pass
+
+#Ensure all inventory slots have proper item class allocation to avoid quantity access error
+    def add_to_inventory(self, npc, item):
+        if npc.inventory[item.item_name]:
+            npc.inventory[item.item_name].quantity += 1
+        npc.inventory[item.item_name] = item
 
         
     #maybe a lesser hunt for villagers, wander and hunt use similar logic for edges
@@ -410,25 +424,6 @@ class NPC():
 
 
 
-
-    def use(self, item):
-        if item.durability == 0 or item.broken:
-            return False
-
-        item.durability -= 1
-        if item.durability == 0:
-            item.can_use = True
-
-        if item.damage:
-            pass
-
-        if item.healing:
-            pass
-
-        if item.satiation:
-            pass
-
-        return True
 
 
 
