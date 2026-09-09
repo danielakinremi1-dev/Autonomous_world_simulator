@@ -10,7 +10,7 @@ terrain_configs = {"grass":{"traversable":True, "emoji":"🟩", "hp":None},
            "rock":{"traversable":False, "emoji":"🪨", "hp": 100},
            "plant":{"traversable":True, "emoji":"🌾", "hp":3}}
 
-#Setup npc inventory objects 
+#Setup npc inventory objects and refactor for dictionary searches
 
 npc_configs = {"blacksmith":{"health":400, "emoji":"👲", "speed" :80, "job" : "craft", "view_radius" : 6, 
                             "inventory": defaultdict(int, {"money": 300,"food": 3,"bandages": 5, 
@@ -60,12 +60,12 @@ item_configs = {"axe":{"durability": 30, "craft time": 14, "consumable" : False,
                        "recycle materials": {"wood": 2, "stone": 0, "water": 0}}, 
 
                 "arrows": {"durability": 1,"craft time": 5, "consumable" : True, 
-                     "price": 60, "item type": "damage", "stat bonus": 5, "quantity": 1,
+                     "price": 60, "item type": "damage", "stat bonus": 5, "quantity": 10,
                        "craft materials": {"wood": 5, "stone": 2, "water": 1}, 
                        "recycle materials": {"wood": 2, "stone": 1, "water": 0}},  
 
                 "cooking utensils": {"durability": 70, "craft time": 10, "consumable" : False, 
-                     "price": 60, "item type": "satiation", "stat bonus": 10, "quantity": 1,
+                     "price": 60, "item type": "cooking equipment", "stat bonus": 10, "quantity": 1,
                        "craft materials": {"wood": 5, "stone": 2, "water": 1}, 
                        "recycle materials": {"wood": 2, "stone": 1, "water": 0}}, 
 
@@ -75,12 +75,12 @@ item_configs = {"axe":{"durability": 30, "craft time": 14, "consumable" : False,
                        "recycle materials": {"wood": 1, "stone": 3, "water": 0}},
                 
                 "medical equipment":{"durability": 70, "craft time": 25, "consumable" : False, 
-                     "price": 70, "item type": "healing", "stat bonus": 10, "quantity": 1,
+                     "price": 70, "item type": "healing equipment", "stat bonus": 10, "quantity": 1,
                        "craft materials": {"wood": 2, "stone": 5, "water": 1}, 
                        "recycle materials": {"wood": 1, "stone": 1, "water": 0}},
                 
                 "bandages":{"durability": 1,"craft time": 20, "consumable" : True, 
-                     "price": 35, "item type": "healing", "stat bonus": 100, "quantity": 1,
+                     "price": 35, "item type": "healing", "stat bonus": 100, "quantity": 2,
                        "craft materials": {"wood": 1, "herbs": 3, "water": 1}, 
                        "recycle materials": {"wood": 1, "stone": 1, "water": 0}},
                 
