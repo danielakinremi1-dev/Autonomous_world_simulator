@@ -1,4 +1,4 @@
-from world_objects.configs import npc_configs, direction_configs
+from world_objects.configs import npc_configs, direction_configs, item_configs
 from typing import TYPE_CHECKING
 import random
 from collections import deque
@@ -35,8 +35,9 @@ class NPC:
         self.busy = False
         self.alive = True
         self.crafting_queue = None
-        self.buy_queue = None
-        self.sell_queue = None
+        self.buy_queue = []
+        self.sell_queue = []
+        self.coins = 2000
 
         # Spawn in homes with NPCs and provide visuals for goals later
 
@@ -46,7 +47,7 @@ class NPC:
     def get_visual(self) -> str:
         return self.emoji
 
-    # Refactor order by importance, handle broken and unusable items and consumbles
+    # Refactor sell and buy queues by order of importance, handle broken and unusable items and consumbles
     def observe_and_act(self) -> None:
         if self.alive:
             self.hunger -= 1
@@ -155,6 +156,8 @@ class NPC:
             if self.world.find_nurse() != None:
                 self.confirm_destination(self.world.find_nurse())
                 self.sub_goal = "Find nurse"
+                self.buy_queue.append(Item("bandages"))
+                self.buy_queue.append(Item("bandages"))
             elif self.home != None:
                 self.confirm_destination(self.home)
                 self.sub_goal = "Get home"
@@ -176,6 +179,8 @@ class NPC:
             if self.world.find_baker() != None:
                 self.confirm_destination(self.world.find_baker())
                 self.sub_goal = "Find baker"
+                self.buy_queue.append(Item("food"))
+                self.buy_queue.append(Item("food"))
             elif self.home != None:
                 self.confirm_destination(self.home)
                 self.sub_goal = "Get home"
@@ -212,7 +217,8 @@ class NPC:
 
     def gather_resources(self):
         self.hunger -= 1
-        visible_tiles = self.world.npc_worldview(self)
+        map_data = self.world.npc_worldview(self)
+        visible_tiles = map_data["minimap"]
         target_terrain = None
 
         target_tiles = []
@@ -220,19 +226,30 @@ class NPC:
         final_route = None
 
         # Can check if resource low first with helper method, otherwise skip
-        if self.inventory["wood"] < 3:
+        if not self.inventory["wood"] or self.inventory["wood"].quantity < 3:
             target_terrain = "tree"
             self.sub_goal = "Gather wood"
-        elif self.inventory["herbs"] < 3:
+        elif not self.inventory["herbs"] or self.inventory["herbs"].quantity < 3:
             target_terrain = "plant"
             self.sub_goal = "Gather herbs"
-        elif self.inventory["water"] < 3:
+        elif not self.inventory["water"] or self.inventory["water"].quantity < 3:
             target_terrain = "water"
             self.sub_goal = "Gather water"
-        elif self.inventory["stone"] < 3:
+        elif not self.inventory["stone"] or self.inventory["stone"].quantity < 3:
             target_terrain = "rock"
             self.sub_goal = "Gather stones"
+        elif not self.inventory["wheat"] or self.inventory["wheat"].quantity < 3:
+            target_terrain = "wheat"
+            self.sub_goal = "Gather wheat"
         else:
+            trading_items = [
+                self.inventory["wood"],
+                self.inventory["herbs"],
+                self.inventory["water"],
+                self.inventory["stone"],
+                self.inventory["wheat"],
+            ]
+            self.sell_queue.extend(trading_items)
             self.trade_and_sell()
             return
 
@@ -266,28 +283,35 @@ class NPC:
             self.travel_to_destination()
             return
 
-        if not self.inventory["equipment"]["smithing hammer"] or self.inventory["smithing hammer"].quanity < 2:
+        if (
+            not self.inventory["smithing hammer"]
+            or self.inventory["smithing hammer"].quantity < 2
+        ):
             self.can_craft("smithing hammer")
         elif request:
             self.can_craft(request)
 
-        elif self.inventory["pickaxe"] or self.inventory["pickaxe"].quanity < 2:
+        elif not self.inventory["pickaxe"] or self.inventory["pickaxe"].quantity < 2:
             self.can_craft("pickaxe")
-        elif self.inventory["axe"] or self.inventory["axe"].quantity < 2:
+        elif not self.inventory["axe"] or self.inventory["axe"].quantity < 2:
             self.can_craft("axe")
 
-        elif self.inventory["medical equipment"] or self.inventory["medical equipment"] < 1:
-            if not self.can_craft("medical equipment"):
-                self.wait_for_resources()
-        elif self.inventory["cooking utensils"] or self.inventory["cooking utensils"].quantity < 1:
-            if not self.can_craft("cooking utensils"):
-                self.wait_for_resources()
+        elif (
+            not self.inventory["medical equipment"]
+            or self.inventory["medical equipment"] < 1
+        ):
+            self.can_craft("medical equipment")
+        elif (
+            not self.inventory["cooking utensils"]
+            or self.inventory["cooking utensils"].quantity < 1
+        ):
+            self.self.can_craft("cooking utensils")
 
-        elif self.inventory["bow"] or self.inventory["bow"] < 2:
+        elif not self.inventory["bow"] or self.inventory["bow"] < 2:
             self.can_craft("bow")
-        elif self.inventory["sword"] or self.inventory["sword"] < 2:
+        elif not self.inventory["sword"] or self.inventory["sword"] < 2:
             self.can_craft("sword")
-        elif self.inventory["armor"] or self.inventory["armor"] < 2:
+        elif not self.inventory["armor"] or self.inventory["armor"] < 2:
             self.can_craft("armor")
 
         else:
@@ -295,7 +319,10 @@ class NPC:
 
     def heal_and_bandage(self):
 
-        if not self.inventory["medical equipment"].usable:
+        if (
+            not self.inventory["medical equipment"]
+            or not self.inventory["medical equipment"].usable
+        ):
             self.goal = "Repair items at blacksmith"
             self.sub_goal = "Replace broken medical equipment"
             self.confirm_destination(self.world.find_blacksmith())
@@ -313,7 +340,10 @@ class NPC:
                 self.wait_for_resources()
 
     def cook_and_bake(self):
-        if not self.inventory["equipment"]["cooking utensils"].usable:
+        if (
+            not self.inventory["cooking utensils"]
+            or not self.inventory["cooking utensils"].usable
+        ):
             self.goal = "Repair items at blacksmith"
             self.sub_goal = "Replace broken cooking utensils"
             self.confirm_destination(self.world.find_blacksmith())
@@ -332,17 +362,60 @@ class NPC:
                 self.wait_for_resources()
 
     def hunt_and_loot(self):
-        self.hunger -= 1
-        pass
+        if self.inventory["herbs"] and self.inventory["herbs"].quantity > 5:
+            self.sell_queue.append(self.inventory["herbs"])
+        if self.inventory["water"] and self.inventory["water"].quantity > 5:
+            self.sell_queue.append(self.inventory["water"])
+        if self.inventory["stone"] and self.inventory["stone"].quantity > 5:
+            self.sell_queue.append(self.inventory["stone"])
+        if self.inventory["wheat"] and self.inventory["wheat"].quantity > 5:
+            self.sell_queue.append(self.inventory["wheat"])
+        if self.inventory["wood"] and self.inventory["wood"].quantity > 5:
+            self.sell_queue.append(self.inventory["wood"])
+        if self.sell_queue:
+            self.trade_and_sell()
+            return
 
-#Sort by importance of items
+        if self.sub_goal != "Leaving village":
+            self.sub_goal = "Leaving village"
+            self.hunger -= 1
+            map_data = self.world.world_edges()
+            minimap = map_data["world_map"]
+            upper_left = map_data["upper_left"]
+            lower_right = map_data["lower_right"]
+            outer_tiles_coord = []
+            hunting_paths = []
+
+            for row in minimap:
+                for tile in row:
+                    if (
+                        tile.x == (upper_left[0])
+                        or tile.x == lower_right[0]
+                        or tile.y == (upper_left[1])
+                        or tile.y == lower_right[1]
+                    ) and (tile.can_enter()):
+                        outer_tiles_coord.append((tile.x, tile.y))
+
+            for outer_tile in outer_tiles_coord:
+                self.confirm_destination(outer_tile)
+                if self.pathfind():
+                    hunting_paths.append(self.current_path)
+
+            if hunting_paths:
+                final_route = random.choice(hunting_paths)
+                self.destination = final_route[-1]
+                self.current_path = final_route
+                self.move(self.current_path.pop(0))
+        if self.is_at_destination():
+            self.world.despawn_and_respawn(self)
+
+    # Sort by importance of items
     def buy_and_sell(self):
         go_home_after = False
-        
+
         if self.buy_queue:
             item = self.buy_queue[0]
-            match item.type:
-                
+            match item.item_type:
                 case (
                     "medical equipment"
                     | "armor"
@@ -363,46 +436,139 @@ class NPC:
                         self.travel_to_destination()
                         return
 
+                case "healing":
+                    target = self.world.interact_nurse()
+                    self.confirm_destination(self.world.find_nurse())
+                    if not self.is_at_destination():
+                        self.travel_to_destination()
+                        return
                 case _:
                     raise ValueError("Invalid item type")
 
-
-            self.can_trade(target, "Buy")
+            self.trade(target, "Buy")
             if self.buy_queue:
                 go_home_after = True
 
-
-
-        
-
         if self.sell_queue:
             item = self.sell_queue[0]
-            
+            match item.item_type:
+                case (
+                    "medical equipment"
+                    | "armor"
+                    | "damage"
+                    | "mining"
+                    | "logging"
+                    | "cooking equipment"
+                    | "stone"
+                ):
+                    target = self.world.interact_blacksmith()
+                    self.confirm_destination(self.world.find_blacksmith())
+                    if not self.is_at_destination():
+                        self.travel_to_destination()
+                        return
+                case "wood" | "water":
+                    potential_targets = [
+                        (
+                            self.world.interact_blacksmith(),
+                            self.world.find_blacksmith(),
+                        ),
+                        (self.world.interact_baker(), self.world.find_baker()),
+                        (self.world.interact_nurse(), self.world.find_nurse()),
+                    ]
+                    target_details = random.choice(potential_targets)
+                    target = target_details[0]
+                    self.confirm_destination(target_details[1])
 
-    def can_trade(self, target_npc, action):
+                    if not self.is_at_destination():
+                        self.travel_to_destination()
+                        return
+                case "herbs":
+                    target = self.world.interact_nurse()
+                    self.confirm_destination(self.world.find_nurse())
+                    if not self.is_at_destination():
+                        self.travel_to_destination()
+                        return
+                case "wheat":
+                    target = self.world.interact_baker()
+                    self.confirm_destination(self.world.find_baker())
+                    if not self.is_at_destination():
+                        self.travel_to_destination()
+                        return
+                case _:
+                    raise ValueError("Invalid item type")
+
+            self.trade(target, "Sell")
+            if self.sell_queue:
+                go_home_after = True
+
+        if go_home_after:
+            self.goal = "Rest"
+            self.confirm_destination(self.home)
+
+    def trade(self, target_npc, action):
         if action == "Buy":
+            bought = []
             for item in self.buy_queue:
                 target_item = target_npc.inventory[item.item_name]
                 if target_item and target_item.quantity > 0:
                     price = target_item.sell_price
                     if self.coins >= price:
-                        
+                        if self.inventory[item.item_name]:
+                            if target_npc.inventory[item.item_name].quantity == 1:
+                                new_item = target_npc.inventory.pop(item.item_name)
+                            else:
+                                target_npc.inventory[item.item_name].quantity -= 1
+                                new_item = Item(item.item_name)
+                            previous_quanity = self.inventory[item.item_name].quantity
+                            new_item.quantity += previous_quanity
+                            self.inventory[item.item_name] = new_item
+                        else:
+                            if target_npc.inventory[item.item_name].quantity == 1:
+                                new_item = target_npc.inventory.pop(item.item_name)
+                            else:
+                                target_npc.inventory[item.item_name].quantity -= 1
+                                new_item = Item(item.item_name)
+                            self.inventory[item.item_name] = new_item
 
-
-
-
-
-
-
+                        target_npc.coins += price
+                        self.coins -= price
+                        bought.append(item)
+            for item in bought:
+                self.buy_queue.remove(item)
 
         elif action == "Sell":
+            sold = []
+            for item in self.sell_queue:
+                target_item = self.inventory[item.item_name]
+                if target_item and target_item.quantity > 0:
+                    price = target_item.sell_price
+                    if not target_item.usable or (
+                        target_item.durability
+                        < item_configs[target_item.item_name]["durability"]
+                    ):
+                        price = price // 3
+                        target_npc.busy_ticks += 20
+                        target_npc.busy = True
+                    if target_npc.coins >= price:
+                        if target_npc.inventory[item.item_name]:
+                            new_item = self.inventory.pop(item.item_name)
+                            previous_quanity = target_npc.inventory[
+                                item.item_name
+                            ].quantity
+                            new_item.quantity += previous_quanity
+                            target_npc.inventory[item.item_name] = new_item
+                        else:
+                            target_npc.inventory[item.item_name] = self.inventory.pop(
+                                item.item_name
+                            )
 
-
-
-
+                        target_npc.coins -= price
+                        self.coins += price
+                        sold.append(item)
+            for item in sold:
+                self.sell_queue.remove(item)
         else:
             raise ValueError("Invalid trading action")
-
 
     def can_craft(self, item_name=None, status="Start"):
         if status == "Start" and item_name:
@@ -411,29 +577,32 @@ class NPC:
             materials_used = self.crafting_queue.craft_materials
             for key, value in materials_used.items():
                 material_cost = value
-                current_amount = self.inventory[key]
+                current_amount = self.inventory[key].quantity
                 if current_amount - material_cost < 0:
                     self.crafting_queue = None
                     return False
-                self.inventory[key] -= material_cost
+
+            for key, value in materials_used.items():
+                self.inventory[key].quantity -= value
 
             self.sub_goal = f"Crafting {item_name}"
             self.busy = True
             self.busy_ticks = self.crafting_queue.craft_time
 
-            if self.type == "blacksmith":
+            if self.npc_type == "blacksmith":
                 self.inventory["smithing hammer"].use()
 
-            if self.type == "baker":
+            if self.npc_type == "baker":
                 self.inventory["cooking utensils"].use()
 
-            if self.type == "nurse":
+            if self.npc_type == "nurse":
                 self.inventory["medical equipment"].use()
 
             return True
 
         elif status == "Done":
             self.add_to_inventory(self, self.crafting_queue)
+            self.crafting_queue = []
 
     def wait_for_resources(self):
         pass
@@ -442,6 +611,7 @@ class NPC:
     def add_to_inventory(self, npc, item):
         if npc.inventory[item.item_name]:
             npc.inventory[item.item_name].quantity += 1
+            return
         npc.inventory[item.item_name] = item
 
     # maybe a lesser hunt for villagers, wander and hunt use similar logic for edges
@@ -452,11 +622,14 @@ class NPC:
             if self.goal == "Eat":
                 self.hunger = 500 * 0.85
                 self.sleep = True
-                self.sleep_ticks = 10
+                self.sleep_ticks = 15
             if self.goal == "Heal":
                 self.health = (npc_configs[self.npc_type]["health"]) * 0.85
                 self.sleep = True
-                self.sleep_ticks = 10
+                self.sleep_ticks = 15
+            if self.goal == "Rest":
+                self.sleep = True
+                self.sleep_ticks = 12
             if self.goal == "Manage smithing station":
                 self.smith_and_craft()
             if self.goal == "Manage infirmary":
@@ -468,10 +641,10 @@ class NPC:
             self.buy_and_sell()
 
         if self.destination == self.world.find_nurse():
-            self.buy_and_sell
+            self.buy_and_sell()
 
         if self.goal == "Gather resources":
-            self.world.get_resource()
+            self.world.get_resource(self, self.destination, self.sub_goal)
 
         self.destination = None
         self.current_path = None

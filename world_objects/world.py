@@ -2,6 +2,7 @@ from world_objects.terrain import Terrain
 from world_objects.tile import Tile
 from world_objects.npc import NPC
 from world_objects.configs import npc_configs
+from world_objects.items import Item
 import random
 
 
@@ -14,6 +15,9 @@ class World:
         self.row_len = len(map_input[0])
         self.rows = len(map_input)
         self.npcs = []
+        self.despawned_npc = None
+        self.despawn_ticks = 0
+        self.despawn_tile = None
 
         for row in map_input:
             if len(row) != self.row_len:
@@ -94,8 +98,19 @@ class World:
             return False
 
     def advance_world(self) -> None:
+        if self.despawn_ticks:
+            self.despawn_ticks -= 1
+            if self.despawn_ticks == 0:
+                if not self.despawn_tile.can_enter():
+                    self.despawn_ticks += 1
+                    return
+                self.despawn_and_respawn(self.despawned_npc, respawn=True)
+                self.despawned_npc = None
+                self.despawn_tile = None
+
         for npc in self.npcs:
-            npc.observe_and_act()
+            if npc != self.despawned_npc:
+                npc.observe_and_act()
 
     # Known locations
     def find_nurse(self):
@@ -157,7 +172,11 @@ class World:
         for row in range(upper_left[1], lower_right[1] + 1):
             section = world_map[row][upper_left[0] : lower_right[0] + 1]
             minimap.append(section)
-        return {"minimap": minimap, "upper_left": upper_left, "lower_left": lower_right}
+        return {
+            "minimap": minimap,
+            "upper_left": upper_left,
+            "lower_right": lower_right,
+        }
 
     def get_resource(self, npc, tile_coord, target_resource):
 
@@ -165,29 +184,81 @@ class World:
         terrain = tile.terrain
 
         if target_resource == "Gather wood" and terrain.type == "tree":
-            npc.inventory["wood"] += 1
-            tile.terrain.hp -= 1
-            if tile.terrain.hp < 1:
-                tile.terrain = Terrain("ground")
+            if npc.inventory["axe"] and npc.inventory["axe"].usable:
+                npc.inventory["axe"].use()
+                npc.inventory["wood"].quantity += 1
+                tile.terrain.hp -= 1
+                if tile.terrain.hp < 1:
+                    tile.terrain = Terrain("ground")
 
         elif target_resource == "Gather stones" and terrain.type == "rock":
-            npc.inventory["stone"] += 1
-            tile.terrain.hp -= 1
-            if tile.terrain.hp < 1:
-                tile.terrain = Terrain("ground")
+            if npc.inventory["pickaxe"] and npc.inventory["pickaxe"].usable:
+                npc.inventory["pickaxe"].use()
+                npc.inventory["stone"].quantity += 1
+                tile.terrain.hp -= 1
+                if tile.terrain.hp < 1:
+                    tile.terrain = Terrain("ground")
 
         elif target_resource == "Gather herbs" and terrain.type == "plant":
-            npc.inventory["herbs"] += 1
+            npc.inventory["herbs"].quantity += 1
+            tile.terrain.hp -= 1
+            if tile.terrain.hp < 1:
+                tile.terrain = Terrain("grass")
+
+        elif target_resource == "Gather wheat" and terrain.type == "wheat":
+            npc.inventory["wheat"].quantity += 1
             tile.terrain.hp -= 1
             if tile.terrain.hp < 1:
                 tile.terrain = Terrain("grass")
 
         elif target_resource == "Gather water" and terrain.type == "water":
-            npc.inventory["water"] += 1
+            npc.inventory["water"].quantity += 1
 
-    def npc_is_available(self, npc_coord):
+    def world_edges(self):
+        world_map = self.grid
 
-        return False
+        upper_tile = world_map[0][0]
+        lower_tile = world_map[self.rows - 1][self.row_len - 1]
 
-    def spawn_world_objects(self):
-        pass
+        upper_left = (upper_tile.x, upper_tile.y)
+        lower_right = (lower_tile.x, lower_tile.y)
+        return {
+            "world_map": world_map,
+            "upper_left": upper_left,
+            "lower_left": lower_right,
+        }
+
+    def despawn_and_respawn(self, npc, respawn=False):
+        if not respawn:
+            self.despawned_npc = npc
+            self.despawn_tile = self.grid[npc.y][npc.x]
+            self.despawn_tile.occupant = None
+            self.despawn_ticks = 20
+            return
+
+        if not npc.inventory["herbs"]:
+            npc.inventory["herbs"] = Item("herbs")
+            npc.inventory["herbs"].quantity = 0
+        npc.inventory["herbs"].quantity += 3
+
+        if not npc.inventory["stone"]:
+            npc.inventory["stone"] = Item("stone")
+            npc.inventory["stone"].quantity = 0
+        npc.inventory["stone"].quantity += 3
+
+        if not npc.inventory["wheat"]:
+            npc.inventory["wheat"] = Item("wheat")
+            npc.inventory["wheat"].quantity = 0
+        npc.inventory["wheat"].quantity += 3
+
+        if not npc.inventory["water"]:
+            npc.inventory["water"] = Item("water")
+            npc.inventory["water"].quantity = 0
+        npc.inventory["water"].quantity += 3
+
+        if not npc.inventory["wood"]:
+            npc.inventory["wood"] = Item("wood")
+            npc.inventory["wood"].quantity = 0
+        npc.inventory["wood"].quantity += 3
+
+        self.despawn_tile.occupant = npc
