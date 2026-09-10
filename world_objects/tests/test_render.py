@@ -1,7 +1,7 @@
- 
 from world_objects.world import World
 from world_objects.renderer import Renderer
 import pytest
+
 
 def test_renderer_outputs_multiple_rows(capsys):
     test_map = [
@@ -15,13 +15,16 @@ def test_renderer_outputs_multiple_rows(capsys):
 
 
 from world_objects.world import World
-from world_objects.renderer import Renderer 
+from world_objects.renderer import Renderer
 
 
 TEST_MAP = [
     ["ground", "ground", "ground"],
     ["ground", "ground", "ground"],
-    ["grass",  "grass",  "grass"],
+    ["ground", "ground", "ground"],
+    ["ground", "ground", "ground"],
+    ["ground", "ground", "ground"],
+    ["ground", "ground", "ground"],
 ]
 
 
@@ -31,11 +34,7 @@ def test_render_data_contains_spawned_npc_visuals():
 
     render_data = world.get_render_data()
 
-    rendered_visuals = [
-        visual
-        for row in render_data
-        for visual in row
-    ]
+    rendered_visuals = [visual for row in render_data for visual in row]
 
     for npc in world.npcs:
         assert npc.get_visual() in rendered_visuals
@@ -62,11 +61,13 @@ def test_renderer_prints_npc_visuals(capsys):
         assert npc.get_visual() in captured.out
 
 
-
 TEST_MAP = [
     ["ground", "ground", "ground"],
     ["ground", "ground", "ground"],
-    ["grass",  "grass",  "grass"],
+    ["ground", "ground", "ground"],
+    ["ground", "ground", "ground"],
+    ["ground", "ground", "ground"],
+    ["ground", "ground", "ground"],
 ]
 
 

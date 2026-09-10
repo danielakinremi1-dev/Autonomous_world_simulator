@@ -19,10 +19,6 @@ class World:
         self.despawn_ticks = 0
         self.despawn_tile = None
 
-        for row in map_input:
-            if len(row) != self.row_len:
-                raise ValueError("Misshapen map input")
-
         for y_idx, row in enumerate(map_input):
             new_row = []
             for x_idx, terrain_obj in enumerate(row):
@@ -225,7 +221,7 @@ class World:
         return {
             "world_map": world_map,
             "upper_left": upper_left,
-            "lower_left": lower_right,
+            "lower_right": lower_right,
         }
 
     def despawn_and_respawn(self, npc, respawn=False):

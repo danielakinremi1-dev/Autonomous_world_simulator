@@ -1,4 +1,5 @@
 from collections import defaultdict
+from world_objects.helper_item_configs import item_configs
 from world_objects.items import Item
 
 
@@ -102,6 +103,150 @@ npc_configs = {
             },
         ),
     },
+    "villager2": {
+        "health": 200,
+        "emoji": "👩‍🚒",
+        "speed": 50,
+        "job": "gather",
+        "view_radius": 8,
+        "inventory": defaultdict(
+            int,
+            {
+                "food": Item("food", 3),
+                "bandages": Item("bandages", 3),
+                "axe": Item("axe", 1),
+                "pickaxe": Item("pickaxe", 1),
+                "smithing hammer": Item("smithing hammer"),
+            },
+        ),
+    },
+    "villager3": {
+        "health": 200,
+        "emoji": "👩‍🎤",
+        "speed": 50,
+        "job": "gather",
+        "view_radius": 8,
+        "inventory": defaultdict(
+            int,
+            {
+                "food": Item("food", 3),
+                "bandages": Item("bandages", 3),
+                "axe": Item("axe", 1),
+                "pickaxe": Item("pickaxe", 1),
+                "smithing hammer": Item("smithing hammer"),
+            },
+        ),
+    },
+    "villager4": {
+        "health": 200,
+        "emoji": "🧝",
+        "speed": 50,
+        "job": "gather",
+        "view_radius": 8,
+        "inventory": defaultdict(
+            int,
+            {
+                "food": Item("food", 3),
+                "bandages": Item("bandages", 3),
+                "axe": Item("axe", 1),
+                "pickaxe": Item("pickaxe", 1),
+                "smithing hammer": Item("smithing hammer"),
+            },
+        ),
+    },
+    "villager5": {
+        "health": 200,
+        "emoji": "👨‍🔧",
+        "speed": 50,
+        "job": "gather",
+        "view_radius": 8,
+        "inventory": defaultdict(
+            int,
+            {
+                "food": Item("food", 3),
+                "bandages": Item("bandages", 3),
+                "axe": Item("axe", 1),
+                "pickaxe": Item("pickaxe", 1),
+                "smithing hammer": Item("smithing hammer"),
+            },
+        ),
+    },
+    "villager6": {
+        "health": 200,
+        "emoji": "🧕",
+        "speed": 50,
+        "job": "gather",
+        "view_radius": 8,
+        "inventory": defaultdict(
+            int,
+            {
+                "food": Item("food", 3),
+                "bandages": Item("bandages", 3),
+                "axe": Item("axe", 1),
+                "pickaxe": Item("pickaxe", 1),
+                "smithing hammer": Item("smithing hammer"),
+            },
+        ),
+    },
 }
 
 direction_configs = ((0, -1), (0, 1), (-1, 0), (1, 0), (0, 0))
+
+TERRAIN_KEY = {
+    "g": "grass",
+    ".": "ground",
+    "T": "tree",
+    "W": "water",
+    "R": "rock",
+    "P": "plant",
+    "H": "wheat",
+}
+
+
+DEFAULT_MAP_LAYOUT = [
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "Tggggggggggggggggggggggg..gggggggggggggggggggggggT",
+    "Tggggggggggggggggggggggg..gggggggggggggggggggggggT",
+    "TgggggggggTTTggggggggggg..gggggTTggggggggggggggggT",
+    "TggTTTggggggggTTgggggggg..ggggggTggggggggggggggggT",
+    "TggTgggggggggggggggggggg..gggggggggWWWWWgggggggTgT",
+    "TgggggTggggggggggggggggg..ggggggggWWWWWWWWWggggTggT",
+    "Tggggggg.ggggggggggggggg..gggggggWWWWWWWWWWWgggTggT",
+    "Tggggggg..................ggggggggWWWWWWWWWWWggggggT",
+    "Tggggggg.ggggggggggggggg..gggPPgggWWWWWWWWWgggggggT",
+    "TgggggPggggggggggggggggg..gggPPggggWWWWWWWggggggggT",
+    "TggggPgg.gggPPgggggggggg..ggggPgggggWWWgggggggggggT",
+    "TggggggP.gggggPggggggggg..gggPggggggggggggggggggggT",
+    "Tggggggg.gggPggPgggggggg..ggggggggggggggggggggggggT",
+    "Tggggggg.gggggggg..............ggggggggggggRRggggggT",
+    "TggTTggg.gggggggg..............ggggggggggggRgggggggT",
+    "TgggTTTg.gHHHggggg..............ggggggggggggRRggggggT",
+    "Tggggggg.gHHHggggg..............ggPPggggggggggggggggT",
+    "Tggggggg.ggggggggg..............gggPggggggggggggggggT",
+    "T................................................T",
+    "T................................................T",
+    "Tggggggg.gggggHHH..............ggggggggggggg.ggggggT",
+    "Tggggggg.gggggHHH..............ggggggggggggg.ggggggT",
+    "Tggggggg.gPPgggggg..............ggggggggggggg.ggggggT",
+    "Tggggggg.gggPggggg..............ggggggggggggg.ggggggT",
+    "Tggggggg.ggggggggg..............ggggggggggggg.ggggggT",
+    "Tggggggg.ggggggggggggggg..gggggRRRgggggggggg.ggggggT",
+    "Tggggggg.gggTTgggggggggg..gggggRRgRggggggggg.ggggggT",
+    "Tggggggg.ggggTgggggggggg..ggggRRgRRggggggggg.ggggggT",
+    "TggTTggg.gggggTgggggggggg..ggHHHgggggggggggg.ggggggT",
+    "TgggTTgg.ggggggTggggggggg..ggHHHgggggggggggg.ggggggT",
+    "TgggTggg.gggggggggggggggg..ggggggggggggggggg.ggggggT",
+    "Tggggggg.gggggggggggggggg..................gg.ggggggT",
+    "Tggggggg.ggggggPPPggggggg..gggggggggggggggTTTggggggT",
+    "Tggggggg.ggggggggPPgggggg..gggggggggggggggggTTgggggT",
+    "Tggggggg.gggggggggPgggggg..gggggggggggggggTggggggggT",
+    "Tggggggg.gggggggggggggggg..ggggggggggggggggggggggggT",
+    "Tgggggggggggggggggggggggg..gggggggggggggggggggggggT",
+    "Tgggggggggggggggggggggggg..gggggggggggggggggggggggT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+]
+
+
+DEFAULT_MAP_CONFIG = [
+    [TERRAIN_KEY[symbol] for symbol in row] for row in DEFAULT_MAP_LAYOUT
+]

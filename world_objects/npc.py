@@ -1,8 +1,9 @@
-from world_objects.configs import npc_configs, direction_configs, item_configs
+from world_objects.configs import npc_configs
+from world_objects.helper_item_configs import item_configs
 from typing import TYPE_CHECKING
 import random
 from collections import deque
-from items import Item
+from world_objects.items import Item
 
 if TYPE_CHECKING:
     from world_objects.world import World
@@ -23,7 +24,7 @@ class NPC:
         self.personality = "Cooperative"
         self.view_radius = npc_configs[npc_type]["view_radius"]
         self.hunger = 500
-        self.inventory = npc_configs[npc_type]["inventory"]
+        self.inventory = (npc_configs[npc_type]["inventory"]).copy()
         self.destination = None
         self.current_path = None
         self.home = None
@@ -641,6 +642,9 @@ class NPC:
             self.buy_and_sell()
 
         if self.destination == self.world.find_nurse():
+            self.buy_and_sell()
+
+        if self.destination == self.world.find_blacksmith():
             self.buy_and_sell()
 
         if self.goal == "Gather resources":

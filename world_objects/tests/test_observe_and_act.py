@@ -2,28 +2,38 @@ import pytest
 
 from world_objects.world import World
 from world_objects.configs import npc_configs
+from world_objects.items import Item
 
 
 def make_open_world():
-    return World([
-        ["ground", "ground", "ground", "ground", "ground"],
-        ["ground", "ground", "ground", "ground", "ground"],
-        ["ground", "ground", "ground", "ground", "ground"],
-        ["ground", "ground", "ground", "ground", "ground"],
-        ["ground", "ground", "ground", "ground", "ground"],
-    ])
+    return World(
+        [
+            ["ground", "ground", "ground", "ground", "ground"],
+            ["ground", "ground", "ground", "ground", "ground"],
+            ["ground", "ground", "ground", "ground", "ground"],
+            ["ground", "ground", "ground", "ground", "ground"],
+            ["ground", "ground", "ground", "ground", "ground"],
+        ]
+    )
 
 
 def make_wall_world():
+    return World(
+        [
+            ["ground", "ground", "tree", "ground", "ground"],
+            ["ground", "ground", "tree", "ground", "ground"],
+            ["ground", "ground", "tree", "ground", "ground"],
+            ["ground", "ground", "ground", "ground", "ground"],
+            ["ground", "ground", "ground", "ground", "ground"],
+        ]
+    )
 
-    return World([
-        ["ground", "ground", "tree",   "ground", "ground"],
-        ["ground", "ground", "tree",   "ground", "ground"],
-        ["ground", "ground", "tree",   "ground", "ground"],
-        ["ground", "ground", "ground", "ground", "ground"],
-        ["ground", "ground", "ground", "ground", "ground"],
-    ])
 
+def set_item_quantity(npc, item_name, quantity):
+    if not npc.inventory[item_name]:
+        npc.inventory[item_name] = Item(item_name, quantity)
+    else:
+        npc.inventory[item_name].quantity = quantity
 
 
 def test_pathfind_shortest_route_around_wall():
@@ -41,10 +51,7 @@ def test_pathfind_shortest_route_around_wall():
     previous = (npc.x, npc.y)
 
     for coord in npc.current_path:
-        distance = (
-            abs(coord[0] - previous[0])
-            + abs(coord[1] - previous[1])
-        )
+        distance = abs(coord[0] - previous[0]) + abs(coord[1] - previous[1])
 
         assert distance == 1
         assert world.grid[coord[1]][coord[0]].terrain.type != "tree"
@@ -52,7 +59,6 @@ def test_pathfind_shortest_route_around_wall():
         previous = coord
 
     assert npc.is_at_destination(npc.current_path[-1]) is True
-
 
 
 def test_npc_arrives_at_destination():
@@ -74,13 +80,15 @@ def test_npc_arrives_at_destination():
 
 
 def test_npc_knows_when_destination_unreachable():
-    world = World([
-        ["ground", "ground", "tree", "ground", "ground"],
-        ["ground", "ground", "tree", "ground", "ground"],
-        ["ground", "ground", "tree", "ground", "ground"],
-        ["ground", "ground", "tree", "ground", "ground"],
-        ["ground", "ground", "tree", "ground", "ground"],
-    ])
+    world = World(
+        [
+            ["ground", "ground", "tree", "ground", "ground"],
+            ["ground", "ground", "tree", "ground", "ground"],
+            ["ground", "ground", "tree", "ground", "ground"],
+            ["ground", "ground", "tree", "ground", "ground"],
+            ["ground", "ground", "tree", "ground", "ground"],
+        ]
+    )
 
     npc = world.place_npc(0, 2)
 
@@ -95,14 +103,17 @@ def test_npc_knows_when_destination_unreachable():
     assert (npc.x, npc.y) == starting_position
     assert npc.current_path is None
 
+
 def test_auto_travel_fails_without_path():
-    world = World([
-        ["ground", "ground", "tree", "ground", "ground"],
-        ["ground", "ground", "tree", "ground", "ground"],
-        ["ground", "ground", "tree", "ground", "ground"],
-        ["ground", "ground", "tree", "ground", "ground"],
-        ["ground", "ground", "tree", "ground", "ground"],
-    ])
+    world = World(
+        [
+            ["ground", "ground", "tree", "ground", "ground"],
+            ["ground", "ground", "tree", "ground", "ground"],
+            ["ground", "ground", "tree", "ground", "ground"],
+            ["ground", "ground", "tree", "ground", "ground"],
+            ["ground", "ground", "tree", "ground", "ground"],
+        ]
+    )
 
     npc = world.place_npc(0, 2)
 
@@ -113,26 +124,28 @@ def test_auto_travel_fails_without_path():
 
     assert (npc.x, npc.y) == (0, 2)
 
-def test_injured_npc_goes_to_nurse():
+
+def test_injured_npc_goes_to_nurse_and_buys_bandages():
     world = make_open_world()
 
     villager = world.place_npc(0, 2, "villager")
     nurse = world.place_npc(4, 2, "nurse")
 
     villager.health = npc_configs["villager"]["health"] * 0.5
-    villager.inventory["bandages"] = 0
+    set_item_quantity(villager, "bandages", 0)
 
     for _ in range(20):
         villager.observe_and_act()
 
         if (
-            villager.goal is None
-            and villager.inventory["bandages"] == 4
+            villager.health == npc_configs["villager"]["health"]
+            and villager.inventory["bandages"].quantity == 1
         ):
             break
 
     assert villager.health == npc_configs["villager"]["health"]
-    assert villager.inventory["bandages"] == 4
+
+    assert villager.inventory["bandages"].quantity == 1
 
     assert villager.goal is None
     assert villager.destination is None
@@ -142,26 +155,44 @@ def test_injured_npc_goes_to_nurse():
     assert abs(villager.y - nurse.y) <= 1
 
 
-def test_hungry_npc_goes_to_baker():
+def test_npcs_use_bandages_before_seeking_nurse():
+    world = make_open_world()
+
+    villager = world.place_npc(0, 2, "villager")
+    world.place_npc(4, 2, "nurse")
+
+    villager.health = npc_configs["villager"]["health"] * 0.5
+    set_item_quantity(villager, "bandages", 2)
+
+    villager.observe_and_act()
+
+    assert villager.health == npc_configs["villager"]["health"]
+    assert villager.inventory["bandages"].quantity == 1
+
+    assert villager.goal is None
+    assert villager.destination is None
+    assert villager.buy_queue == []
+
+
+def test_hungry_npc_goes_to_baker_and_buys_food():
     world = make_open_world()
 
     villager = world.place_npc(0, 2, "villager")
     baker = world.place_npc(4, 2, "baker")
 
     villager.hunger = 50
-    villager.inventory["food"] = 0
+    set_item_quantity(villager, "food", 0)
 
     for _ in range(20):
         villager.observe_and_act()
 
-        if (
-            villager.goal is None
-            and villager.inventory["food"] == 4
-        ):
+        if villager.hunger == 500 and villager.inventory["food"].quantity == 1:
             break
 
     assert villager.hunger == 500
-    assert villager.inventory["food"] == 4
+
+    # Bought 2, then ate 1.
+    assert villager.inventory["food"].quantity == 1
 
     assert villager.goal is None
     assert villager.destination is None
@@ -178,32 +209,16 @@ def test_npcs_use_food_before_seeking_baker():
     world.place_npc(4, 2, "baker")
 
     villager.hunger = 50
-    villager.inventory["food"] = 2
+    set_item_quantity(villager, "food", 2)
 
     villager.observe_and_act()
 
     assert villager.hunger == 500
-    assert villager.inventory["food"] == 1
+    assert villager.inventory["food"].quantity == 1
 
     assert villager.goal is None
     assert villager.destination is None
-
-def test_npcs_use_bandages_before_seeking_nurse():
-    world = make_open_world()
-
-    villager = world.place_npc(0, 2, "villager")
-    world.place_npc(4, 2, "nurse")
-
-    villager.health = npc_configs["villager"]["health"] * 0.5
-    villager.inventory["bandages"] = 2
-
-    villager.observe_and_act()
-
-    assert villager.health == npc_configs["villager"]["health"]
-    assert villager.inventory["bandages"] == 1
-
-    assert villager.goal is None
-    assert villager.destination is None
+    assert villager.buy_queue == []
 
 
 def test_npcs_prioritize_critical_health_over_critical_hunger():
@@ -216,13 +231,16 @@ def test_npcs_prioritize_critical_health_over_critical_hunger():
     villager.health = npc_configs["villager"]["health"] * 0.5
     villager.hunger = 50
 
-    villager.inventory["bandages"] = 0
-    villager.inventory["food"] = 0
+    set_item_quantity(villager, "bandages", 0)
+    set_item_quantity(villager, "food", 0)
 
     villager.observe_and_act()
 
     assert villager.goal == "Heal"
     assert villager.destination == (nurse.x, nurse.y)
+
+    assert len(villager.buy_queue) == 2
+    assert all(item.item_name == "bandages" for item in villager.buy_queue)
 
 
 def test_arrival_clears_pathfinding():
@@ -231,7 +249,7 @@ def test_arrival_clears_pathfinding():
     villager = world.place_npc(1, 1, "villager")
     baker = world.place_npc(2, 1, "baker")
 
-    villager.goal = "Eat"
+    villager.goal = "Test"
     villager.destination = (baker.x, baker.y)
     villager.current_path = [(1, 2), (2, 2)]
 
@@ -240,7 +258,6 @@ def test_arrival_clears_pathfinding():
     assert villager.goal is None
     assert villager.destination is None
     assert villager.current_path is None
-
 
 
 def test_sleeping_npc_does_not_move():
@@ -257,6 +274,7 @@ def test_sleeping_npc_does_not_move():
     assert (npc.x, npc.y) == starting_position
     assert npc.sleep_ticks == 2
     assert npc.sleep is True
+
 
 def test_npc_wakes_when_sleep_clears():
     world = make_open_world()
